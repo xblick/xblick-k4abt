@@ -11,9 +11,9 @@
 
 #include <k4a/k4a.h>
 
-#include "durchblick/msg.hpp"
+#include "xblick/msg.hpp"
 
-namespace durchblick::k4a_node
+namespace xblick::k4a_node
 {
     // Names of the SDK's modes, as the options and the calibration record spell them.
     std::string depth_mode_name(k4a_depth_mode_t mode);
@@ -27,7 +27,7 @@ namespace durchblick::k4a_node
     // ::color_camera_calibration), at the resolution of the mode it was made for. The SDK's Brown-Conrady model is
     // OpenCV's rational model: distortion_model "rational_polynomial", D = [k1, k2, p1, p2, k3, k4, k5, k6]. The
     // deprecated Rational 6KT model (early internal devices) has other tangential terms and is refused.
-    durchblick::CameraInfo camera_info(const k4a_calibration_camera_t& camera, const std::string& frame_id);
+    xblick::CameraInfo camera_info(const k4a_calibration_camera_t& camera, const std::string& frame_id);
 
     struct CalibrationRecord
     {
@@ -43,7 +43,7 @@ namespace durchblick::k4a_node
         // their K and D into the SDK's calibration, so depth_to_color, the body tracker and the point clouds use them;
         // color_info() and depth_info() are the files' CameraInfo themselves (their R and P too). The extrinsics
         // (tf_static) stay the device's.
-        std::optional<durchblick::CameraInfo> color_file, depth_file;
+        std::optional<xblick::CameraInfo> color_file, depth_file;
 
         // JSON for <base>/k4a_calibration: {"v": 1, "raw": ..., "depth_mode": "NFOV_UNBINNED", ...}
         std::string to_json() const;
@@ -53,8 +53,8 @@ namespace durchblick::k4a_node
         // (the SDK's) or plumb_bob, skew, or R not the identity.
         k4a_calibration_t calibration() const;
         // The CameraInfo of the colour and the depth camera's streams: the file's, else camera_info() of the device's
-        durchblick::CameraInfo color_info() const;
-        durchblick::CameraInfo depth_info() const;
+        xblick::CameraInfo color_info() const;
+        xblick::CameraInfo depth_info() const;
     };
 
     // The record with the calibration files of the colour and the depth camera read (an empty path: the device's);
@@ -64,4 +64,4 @@ namespace durchblick::k4a_node
 
     // 2: the calibration files (color_file, depth_file)
     inline constexpr int kCalibrationRecordVersion = 2;
-}  // namespace durchblick::k4a_node
+}  // namespace xblick::k4a_node

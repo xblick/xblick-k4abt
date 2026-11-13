@@ -3,9 +3,9 @@
 // SDK returns frames without bodies. libk4abt needs libonnxruntime.so.1.10.0 and imports three functions with the
 // symbol version VERS_1.10.0 (nm -D --undefined-only): OrtGetApiBase and the two legacy functions that append the CUDA
 // and the TensorRT execution provider. This library has that soname and that symbol version and forwards the three
-// calls to the ONNX Runtime given at build time (DURCHBLICK_K4A_ONNXRUNTIME_DIR, its libonnxruntime.so.1). ONNX
+// calls to the ONNX Runtime given at build time (XBLICK_K4A_ONNXRUNTIME_DIR, its libonnxruntime.so.1). ONNX
 // Runtime's C API keeps older API versions (OrtGetApiBase()->GetApi(n) for n up to the current one), so libk4abt gets
-// the function table it was built against. Loaded before libk4abt (durchblick-k4abt links it), the dynamic linker
+// the function table it was built against. Loaded before libk4abt (xblick-k4abt links it), the dynamic linker
 // takes it for libk4abt's libonnxruntime.so.1.10.0 by its soname.
 //
 // One call is not forwarded: ReleaseEnv. libk4abt keeps its OrtEnv in a static object and releases it from that
@@ -24,7 +24,7 @@
 // cuBLAS and cuDNN of the whole process.
 //
 // TensorRT builds its engine for the GPU at every start (10 s for dnn_model_2_0_op11 on the RTX PRO 6000) unless it
-// is cached: durchblick_onnxruntime_tensorrt_cache(dir), called before the tracker is created, has the TensorRT
+// is cached: xblick_onnxruntime_tensorrt_cache(dir), called before the tracker is created, has the TensorRT
 // execution provider appended with ONNX Runtime's engine and timing cache in dir.
 #include <dlfcn.h>
 #include <onnxruntime_c_api.h>
@@ -41,13 +41,13 @@ namespace
         static void* const library = dlopen("libonnxruntime.so.1", RTLD_NOW | RTLD_LOCAL);
         if (library == nullptr)
         {
-            std::fprintf(stderr, "durchblick-k4abt: ONNX Runtime: %s\n", dlerror());
+            std::fprintf(stderr, "xblick-k4abt: ONNX Runtime: %s\n", dlerror());
             std::abort();
         }
         void* f = dlsym(library, name);
         if (f == nullptr)
         {
-            std::fprintf(stderr, "durchblick-k4abt: ONNX Runtime has no %s\n", name);
+            std::fprintf(stderr, "xblick-k4abt: ONNX Runtime has no %s\n", name);
             std::abort();
         }
         return f;
@@ -120,7 +120,7 @@ extern "C"
             real("OrtSessionOptionsAppendExecutionProvider_Tensorrt"));
         if (const char* tf32 = std::getenv("NVIDIA_TF32_OVERRIDE"); tf32 != nullptr and std::string(tf32) != "0")
         {
-            std::fprintf(stderr, "durchblick-k4abt: NVIDIA_TF32_OVERRIDE=%s; TensorRT body tracking needs it 0\n", tf32);
+            std::fprintf(stderr, "xblick-k4abt: NVIDIA_TF32_OVERRIDE=%s; TensorRT body tracking needs it 0\n", tf32);
             std::abort();
         }
         setenv("NVIDIA_TF32_OVERRIDE", "0", 1);
@@ -148,7 +148,7 @@ extern "C"
     }
 
     // the directory of TensorRT's engine and timing cache (it must exist); before the tracker is created
-    __attribute__((visibility("default"))) void durchblick_onnxruntime_tensorrt_cache(const char* dir) noexcept
+    __attribute__((visibility("default"))) void xblick_onnxruntime_tensorrt_cache(const char* dir) noexcept
     {
         tensorrt_cache = dir;
     }

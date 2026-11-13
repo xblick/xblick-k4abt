@@ -1,8 +1,8 @@
 # Options of the programs
 
-This page lists every command-line option of `durchblick-azure-kinect`, `durchblick-k4abt` and
-`durchblick-azure-kinect-parameters`. `durchblick-azure-kinect` and `durchblick-k4abt` list theirs with `--help`
-(Durchblick's `durchblick::Options`); `durchblick-azure-kinect-parameters` does not. The header comments of
+This page lists every command-line option of `xblick-azure-kinect`, `xblick-k4abt` and
+`xblick-azure-kinect-parameters`. `xblick-azure-kinect` and `xblick-k4abt` list theirs with `--help`
+(Durchblick's `xblick::Options`); `xblick-azure-kinect-parameters` does not. The header comments of
 `src/main_camera.cpp`, `src/main_body_tracking.cpp` and `src/main_parameters.cpp` are the source of this page. Every
 program stops with an error at an unknown option.
 
@@ -16,7 +16,7 @@ Each program connects to the Zenoh router of its PC at `127.0.0.1:7447` by defau
 | `--listen ENDPOINT...` | Listen on these endpoints. |
 | `--zenoh-config FILE` | Use this Zenoh configuration file. |
 
-## durchblick-azure-kinect
+## xblick-azure-kinect
 
 ### Source
 
@@ -54,7 +54,7 @@ The five short options refuse the value `auto`. Give the value, or set the `auto
 
 | Option | Default | Effect |
 | --- | --- | --- |
-| `--cuda-device N\|none` | `0` in builds with `DURCHBLICK_K4A_CUDA`, else `none` | The GPU for nvJPEG decoding, NPP remapping and the CUDA rings. `none` turns the GPU path off. |
+| `--cuda-device N\|none` | `0` in builds with `XBLICK_K4A_CUDA`, else `none` | The GPU for nvJPEG decoding, NPP remapping and the CUDA rings. `none` turns the GPU path off. |
 | `--depth-engine-gpu N` | the value of `--cuda-device`, else `0` | The CUDA device on which the depth engine gets its OpenGL context through EGL. |
 | `--sync-publish` | off | Publish all streams in the capture loop, one after the other. By default four threads publish them. |
 
@@ -85,7 +85,7 @@ The five short options refuse the value `auto`. Give the value, or set the `auto
 The calibration files also work with `--playback`. [streams.md](streams.md#calibration-files) states what a file
 must contain.
 
-## durchblick-k4abt
+## xblick-k4abt
 
 The tracker runs on the camera's host and reads the host rings there. On another host with a GPU it receives raw
 frames through the routers.
@@ -100,18 +100,18 @@ frames through the routers.
 | `--mask-min-x PX`, `--mask-max-x PX` | `-1`, off | The tracker ignores depth and IR outside these image columns. Live: it changes while the node runs. |
 | `--mask-max-z MM` | `-1`, off | The tracker ignores depth and IR beyond this distance. Live: it changes while the node runs. |
 | `--max-rate HZ` | `0`, every frame | Track at most this many frames per second. Live: it changes while the node runs. |
-| `--tensorrt-cache DIR` | `$XDG_CACHE_HOME/durchblick-k4abt`, else `~/.cache/durchblick-k4abt` | The directory of TensorRT's engine cache. An empty value builds the engine at every start, which takes 10 s. |
+| `--tensorrt-cache DIR` | `$XDG_CACHE_HOME/xblick-k4abt`, else `~/.cache/xblick-k4abt` | The directory of TensorRT's engine cache. An empty value builds the engine at every start, which takes 10 s. |
 | `--status-period SECONDS` | `5` | The period of the status line on the terminal. |
 
-`--tensorrt-cache` exists only in builds with `DURCHBLICK_K4A_ONNXRUNTIME_DIR`, and the program accepts it only with
+`--tensorrt-cache` exists only in builds with `XBLICK_K4A_ONNXRUNTIME_DIR`, and the program accepts it only with
 `--processing tensorrt`. The masks set depth and IR outside them to 65535. A mask value of 0 or below turns that mask
 off.
 
 The program finds CUDA 12 and cuDNN 9 through its RPATH. It finds TensorRT there too in builds with
-`DURCHBLICK_K4A_TENSORRT_DIR`. In other builds TensorRT 10 must be on `LD_LIBRARY_PATH`.
+`XBLICK_K4A_TENSORRT_DIR`. In other builds TensorRT 10 must be on `LD_LIBRARY_PATH`.
 [design.md](design.md#libraries-at-run-time) explains this.
 
-## durchblick-azure-kinect-parameters
+## xblick-azure-kinect-parameters
 
 This client reads and sets the parameters of a node over its parameter services, like `ros2 param`. It works with any
 node that serves them.
@@ -133,4 +133,4 @@ Every option is also a parameter of the node `<base>` for the camera and `<base>
 ones change while the node runs: `mask_min_x`, `mask_max_x`, `mask_max_z`, `max_rate`; the tables mark them. The
 others are read-only and apply at the next start, where `--param NAME:=VALUE` or `--params-file FILE` set them. The
 camera's settings that change while it runs are its own parameters ([parameters.md](parameters.md)); its options are
-read-only. Durchblick's terminal interface (`blick`, tab Parameters) and `blick param` show them.
+read-only. Durchblick's terminal interface (`xblick`, tab Parameters) and `xblick param` show them.

@@ -1,4 +1,4 @@
-durchblick-azure-kinect
+xblick-azure-kinect
 Copyright 2026 David Schneider
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
@@ -38,7 +38,7 @@ Third-party software that this repository does not contain
 ----------------------------------------------------------
 
 The build links Microsoft's Azure Kinect Sensor SDK (libk4a, libk4arecord) and,
-for durchblick-k4abt, the Azure Kinect Body Tracking SDK. The Sensor SDK's source
+for xblick-k4abt, the Azure Kinect Body Tracking SDK. The Sensor SDK's source
 code is under the MIT licence quoted above. At run time libk4a
 loads the depth engine (libdepthengine). The depth engine and the Body
 Tracking SDK are proprietary Microsoft binaries under the Microsoft Software

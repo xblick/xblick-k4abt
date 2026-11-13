@@ -22,8 +22,8 @@
 #include <nlohmann/json.hpp>
 
 #include "calibration.hpp"
-#include "durchblick/camera.hpp"
-#include "durchblick/protocol.hpp"
+#include "xblick/camera.hpp"
+#include "xblick/protocol.hpp"
 #include "node.hpp"
 
 // ONNX Runtime's entry point (onnxruntime_c_api.h), from the library libk4abt runs on: the SDK's own 1.10 or a
@@ -36,12 +36,12 @@ extern "C"
         const char* (*GetVersionString)();
     };
     const OrtApiBase* OrtGetApiBase();
-#ifdef DURCHBLICK_K4A_ONNXRUNTIME_COMPAT
-    void durchblick_onnxruntime_tensorrt_cache(const char* dir) noexcept;  // src/onnxruntime_compat.cpp
+#ifdef XBLICK_K4A_ONNXRUNTIME_COMPAT
+    void xblick_onnxruntime_tensorrt_cache(const char* dir) noexcept;  // src/onnxruntime_compat.cpp
 #endif
 }
 
-namespace durchblick::k4a_node
+namespace xblick::k4a_node
 {
     namespace
     {
@@ -84,17 +84,17 @@ namespace durchblick::k4a_node
         // kernels for GPUs of compute capability 10 and newer. There every inference fails, and the SDK still
         // delivers results: frames without bodies, as if nobody was in view (measured 2026-10-27 on an RTX PRO 6000,
         // compute capability 12.0: cudaErrorNoKernelImageForDevice). Refuse that combination instead of tracking
-        // nothing; a current ONNX Runtime (DURCHBLICK_K4A_ONNXRUNTIME_DIR) has kernels for these GPUs.
+        // nothing; a current ONNX Runtime (XBLICK_K4A_ONNXRUNTIME_DIR) has kernels for these GPUs.
         void check_gpu(const std::string& processing, int device)
         {
             const std::string onnxruntime = OrtGetApiBase()->GetVersionString();
-            std::cerr << "durchblick-k4abt: ONNX Runtime " << onnxruntime << std::endl;
+            std::cerr << "xblick-k4abt: ONNX Runtime " << onnxruntime << std::endl;
             if (processing == "cpu")
             {
                 return;
             }
             const auto [major, minor] = compute_capability(device);
-            std::cerr << "durchblick-k4abt: GPU " << device << " has compute capability " << major << "." << minor
+            std::cerr << "xblick-k4abt: GPU " << device << " has compute capability " << major << "." << minor
                       << std::endl;
             if (major >= 10 and onnxruntime.starts_with("1.10."))
             {
@@ -102,11 +102,11 @@ namespace durchblick::k4a_node
                     "GPU " + std::to_string(device) + " has compute capability " + std::to_string(major) + "." +
                     std::to_string(minor) + ": the ONNX Runtime 1.10 (CUDA 11) of the Body Tracking SDK 1.1 has no "
                     "kernels for it (every result would come without bodies). Build with "
-                    "DURCHBLICK_K4A_ONNXRUNTIME_DIR (a current ONNX Runtime for CUDA 12) or use --processing cpu");
+                    "XBLICK_K4A_ONNXRUNTIME_DIR (a current ONNX Runtime for CUDA 12) or use --processing cpu");
             }
         }
 
-#ifdef DURCHBLICK_K4A_ONNXRUNTIME_COMPAT
+#ifdef XBLICK_K4A_ONNXRUNTIME_COMPAT
         // "onnxruntime-1.31.1_tensorrt-10.14.1.48": the versions an engine was built with. TensorRT's version through
         // libnvinfer.so.10, the TensorRT the execution provider of ONNX Runtime's CUDA 12 packages loads.
         std::string engine_versions()
@@ -143,7 +143,7 @@ namespace durchblick::k4a_node
                     name.find("_tensorrt-") != std::string::npos)
                 {
                     std::filesystem::remove_all(entry.path());
-                    std::cerr << "durchblick-k4abt: deleted the TensorRT engine cache of " << name << std::endl;
+                    std::cerr << "xblick-k4abt: deleted the TensorRT engine cache of " << name << std::endl;
                 }
             }
             const std::filesystem::path dir = base / current;
@@ -353,7 +353,7 @@ namespace durchblick::k4a_node
             // with the protocol's attachment, as every Durchblick sample: its publish_ns against the result's stamp is
             // how long the capture took to come out of this node
             zenoh::Publisher::PutOptions options;
-            options.attachment = zenoh::Bytes(nlohmann::json{{"v", durchblick::protocol::kAttachmentVersion},
+            options.attachment = zenoh::Bytes(nlohmann::json{{"v", xblick::protocol::kAttachmentVersion},
                                                              {"seq", bodies_seq++},
                                                              {"publish_called_ns", called_ns},
                                                              {"publish_ns", std::chrono::duration_cast<std::chrono::nanoseconds>(
@@ -409,12 +409,12 @@ namespace durchblick::k4a_node
         check_gpu(options.processing, options.gpu_device);
         if (options.processing == "tensorrt" and not options.tensorrt_cache.empty())
         {
-#ifdef DURCHBLICK_K4A_ONNXRUNTIME_COMPAT
+#ifdef XBLICK_K4A_ONNXRUNTIME_COMPAT
             const std::filesystem::path dir = engine_cache(options.tensorrt_cache);
-            durchblick_onnxruntime_tensorrt_cache(dir.c_str());
-            std::cerr << "durchblick-k4abt: TensorRT engine cache " << dir.string() << std::endl;
+            xblick_onnxruntime_tensorrt_cache(dir.c_str());
+            std::cerr << "xblick-k4abt: TensorRT engine cache " << dir.string() << std::endl;
 #else
-            throw std::invalid_argument("a TensorRT engine cache needs DURCHBLICK_K4A_ONNXRUNTIME_DIR (this build "
+            throw std::invalid_argument("a TensorRT engine cache needs XBLICK_K4A_ONNXRUNTIME_DIR (this build "
                                         "runs on the Body Tracking SDK's own ONNX Runtime)");
 #endif
         }
@@ -623,14 +623,14 @@ namespace durchblick::k4a_node
 
     std::string default_tensorrt_cache()
     {
-#ifdef DURCHBLICK_K4A_ONNXRUNTIME_COMPAT
+#ifdef XBLICK_K4A_ONNXRUNTIME_COMPAT
         if (const char* xdg = std::getenv("XDG_CACHE_HOME"); xdg != nullptr and *xdg != 0)
         {
-            return std::string(xdg) + "/durchblick-k4abt";
+            return std::string(xdg) + "/xblick-k4abt";
         }
         if (const char* home = std::getenv("HOME"); home != nullptr and *home != 0)
         {
-            return std::string(home) + "/.cache/durchblick-k4abt";
+            return std::string(home) + "/.cache/xblick-k4abt";
         }
         throw std::runtime_error("neither XDG_CACHE_HOME nor HOME is set: give the TensorRT engine cache explicitly");
 #else
@@ -653,4 +653,4 @@ namespace durchblick::k4a_node
                       static_cast<unsigned long long>(now.rate_limited - before.rate_limited));
         return text;
     }
-}  // namespace durchblick::k4a_node
+}  // namespace xblick::k4a_node

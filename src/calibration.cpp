@@ -6,7 +6,7 @@
 
 #include <nlohmann/json.hpp>
 
-namespace durchblick::k4a_node
+namespace xblick::k4a_node
 {
     namespace
     {
@@ -93,7 +93,7 @@ namespace durchblick::k4a_node
         throw std::invalid_argument("unknown k4a_fps_t " + std::to_string(int(fps)));
     }
 
-    durchblick::CameraInfo camera_info(const k4a_calibration_camera_t& camera, const std::string& frame_id)
+    xblick::CameraInfo camera_info(const k4a_calibration_camera_t& camera, const std::string& frame_id)
     {
         if (camera.intrinsics.type != K4A_CALIBRATION_LENS_DISTORTION_MODEL_BROWN_CONRADY)
         {
@@ -107,7 +107,7 @@ namespace durchblick::k4a_node
         {
             throw std::invalid_argument("the distortion is centred off the principal point (codx, cody): no ROS model");
         }
-        durchblick::CameraInfo info = durchblick::CameraInfo::pinhole(
+        xblick::CameraInfo info = xblick::CameraInfo::pinhole(
             static_cast<std::uint32_t>(camera.resolution_width), static_cast<std::uint32_t>(camera.resolution_height),
             p.fx, p.fy, p.cx, p.cy, frame_id);
         info.distortion_model = "rational_polynomial";
@@ -117,7 +117,7 @@ namespace durchblick::k4a_node
 
     namespace
     {
-        nlohmann::json file_json(const std::optional<durchblick::CameraInfo>& file)
+        nlohmann::json file_json(const std::optional<xblick::CameraInfo>& file)
         {
             if (not file)
             {
@@ -128,13 +128,13 @@ namespace durchblick::k4a_node
                     {"p", file->p}};
         }
 
-        std::optional<durchblick::CameraInfo> file_from_json(const nlohmann::json& j)
+        std::optional<xblick::CameraInfo> file_from_json(const nlohmann::json& j)
         {
             if (j.is_null())
             {
                 return std::nullopt;
             }
-            durchblick::CameraInfo info;
+            xblick::CameraInfo info;
             info.width = j.at("width").get<std::uint32_t>();
             info.height = j.at("height").get<std::uint32_t>();
             info.distortion_model = j.at("distortion_model").get<std::string>();
@@ -147,7 +147,7 @@ namespace durchblick::k4a_node
 
         // K and D of a calibration file into the SDK's camera (its Brown-Conrady model is rational_polynomial;
         // plumb_bob is the same with k4 = k5 = k6 = 0)
-        void use_file(k4a_calibration_camera_t& camera, const durchblick::CameraInfo& file, const std::string& which)
+        void use_file(k4a_calibration_camera_t& camera, const xblick::CameraInfo& file, const std::string& which)
         {
             const std::string what = which + " calibration file: ";
             if (file.width != std::uint32_t(camera.resolution_width) or
@@ -257,22 +257,22 @@ namespace durchblick::k4a_node
         return calibration;
     }
 
-    durchblick::CameraInfo CalibrationRecord::color_info() const
+    xblick::CameraInfo CalibrationRecord::color_info() const
     {
         if (color_file)
         {
-            durchblick::CameraInfo info = *color_file;
+            xblick::CameraInfo info = *color_file;
             info.header.frame_id = color_frame_id;
             return info;
         }
         return camera_info(calibration().color_camera_calibration, color_frame_id);
     }
 
-    durchblick::CameraInfo CalibrationRecord::depth_info() const
+    xblick::CameraInfo CalibrationRecord::depth_info() const
     {
         if (depth_file)
         {
-            durchblick::CameraInfo info = *depth_file;
+            xblick::CameraInfo info = *depth_file;
             info.header.frame_id = depth_frame_id;
             return info;
         }
@@ -288,7 +288,7 @@ namespace durchblick::k4a_node
             {
                 throw std::invalid_argument("a colour calibration file, but the colour camera is off");
             }
-            record.color_file = durchblick::CameraInfo::read_file(color_path);
+            record.color_file = xblick::CameraInfo::read_file(color_path);
         }
         if (not depth_path.empty())
         {
@@ -296,9 +296,9 @@ namespace durchblick::k4a_node
             {
                 throw std::invalid_argument("a depth calibration file, but the depth camera is off");
             }
-            record.depth_file = durchblick::CameraInfo::read_file(depth_path);
+            record.depth_file = xblick::CameraInfo::read_file(depth_path);
         }
         record.calibration();  // the files fit their cameras, or this throws here
         return record;
     }
-}  // namespace durchblick::k4a_node
+}  // namespace xblick::k4a_node

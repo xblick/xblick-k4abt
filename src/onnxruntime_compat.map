@@ -3,7 +3,7 @@ VERS_1.10.0 {
   global:
     OrtGetApiBase;
     OrtSessionOptionsAppendExecutionProvider_CUDA;
-    OrtSessionOptionsAppendExecutionProvider_Tensorrt; durchblick_onnxruntime_tensorrt_cache;
+    OrtSessionOptionsAppendExecutionProvider_Tensorrt; xblick_onnxruntime_tensorrt_cache;
   local:
     *;
 };

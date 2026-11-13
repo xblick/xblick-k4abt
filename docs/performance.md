@@ -1,4 +1,4 @@
-# Performance of durchblick-azure-kinect
+# Performance of xblick-azure-kinect
 
 This page has every measurement of the node with its setup: the cost per colour frame, the cost per capture with
 subscribers, the camera on a busy GPU, and the body tracking. The README has the short table.

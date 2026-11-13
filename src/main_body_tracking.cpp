@@ -1,16 +1,16 @@
-// durchblick-k4abt: Azure Kinect body tracking from a camera node's streams (body_tracking.hpp), in a process of its
+// xblick-k4abt: Azure Kinect body tracking from a camera node's streams (body_tracking.hpp), in a process of its
 // own: on the camera's host (shared memory) or any other with a GPU (raw frames over the network).
 //
-//   durchblick-k4abt [--base robot/azurekinect] [--model dnn_model_2_0_op11.onnx]
+//   xblick-k4abt [--base robot/azurekinect] [--model dnn_model_2_0_op11.onnx]
 //                    [--processing tensorrt|cuda|cpu] [--gpu-device 0] [--smoothing 0]
 //                    [--mask-min-x PX] [--mask-max-x PX] [--mask-max-z MM] [--max-rate HZ] [--tensorrt-cache DIR]
 //
 // --model defaults to $K4A_BODY_TRACKING_DNN_MODEL_FILEPATH. --tensorrt-cache (TensorRT's engine
-// cache; built with DURCHBLICK_K4A_ONNXRUNTIME_DIR only) defaults to $XDG_CACHE_HOME/durchblick-k4abt, else
-// ~/.cache/durchblick-k4abt; an empty value builds the engine at every start (10 s). --processing defaults to tensorrt
+// cache; built with XBLICK_K4A_ONNXRUNTIME_DIR only) defaults to $XDG_CACHE_HOME/xblick-k4abt, else
+// ~/.cache/xblick-k4abt; an empty value builds the engine at every start (10 s). --processing defaults to tensorrt
 // (TensorRT 10 on LD_LIBRARY_PATH). Zenoh: the PC's router (127.0.0.1:7447; the camera on another PC through the
 // routers), or --listen/--connect ENDPOINT..., or --zenoh-config FILE. Every option is also a parameter of the node
-// <base>/k4abt (durchblick/options.hpp): the masks and --max-rate change while it runs, the others are read-only.
+// <base>/k4abt (xblick/options.hpp): the masks and --max-rate change while it runs, the others are read-only.
 #include <atomic>
 #include <chrono>
 #include <csignal>
@@ -22,9 +22,9 @@
 #include <string>
 
 #include "body_tracking.hpp"
-#include "durchblick/camera.hpp"
-#include "durchblick/options.hpp"
-#include "durchblick/parameters.hpp"
+#include "xblick/camera.hpp"
+#include "xblick/options.hpp"
+#include "xblick/parameters.hpp"
 
 namespace
 {
@@ -33,13 +33,13 @@ namespace
 
 int main(int argc, char** argv)
 {
-    using namespace durchblick;
-    using namespace durchblick::k4a_node;
+    using namespace xblick;
+    using namespace xblick::k4a_node;
     std::signal(SIGINT, [](int) { stop = true; });
     std::signal(SIGTERM, [](int) { stop = true; });
     const BodyTrackingOptions defaults;
     const char* env_model = std::getenv("K4A_BODY_TRACKING_DNN_MODEL_FILEPATH");
-    Options options("durchblick-k4abt", "Azure Kinect body tracking from a camera node's depth and IR streams");
+    Options options("xblick-k4abt", "Azure Kinect body tracking from a camera node's depth and IR streams");
     options.add("base", defaults.base, {.help = "the camera node's base; the parameters' node <base>/k4abt"});
     options.add("model", env_model != nullptr ? env_model : "",
                 {.help = "the SDK's ONNX model (default $K4A_BODY_TRACKING_DNN_MODEL_FILEPATH)", .metavar = "FILE"});
@@ -138,7 +138,7 @@ int main(int argc, char** argv)
             std::lock_guard lock(tracker_mutex);
             tracker = &tracking;
         }
-        std::cout << "durchblick-k4abt: tracking " << o.base << "/{depth,ir} (" << o.processing << ") -> " << o.base
+        std::cout << "xblick-k4abt: tracking " << o.base << "/{depth,ir} (" << o.processing << ") -> " << o.base
                   << "/" << kBodies << " (diagnostics: " << o.base << "/diagnostics)" << std::endl;
         std::cout << "ready" << std::endl;
 
@@ -167,7 +167,7 @@ int main(int argc, char** argv)
     }
     catch (const std::exception& e)
     {
-        std::cerr << "durchblick-k4abt: " << e.what() << std::endl;
+        std::cerr << "xblick-k4abt: " << e.what() << std::endl;
         return 1;
     }
     return 0;

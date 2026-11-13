@@ -1,4 +1,4 @@
-# Build and test durchblick-azure-kinect
+# Build and test xblick-azure-kinect
 
 This page lists the dependencies, the CMake options and the tests. The README has the short build command.
 
@@ -6,13 +6,13 @@ This page lists the dependencies, the CMake options and the tests. The README ha
 
 | Dependency | Needed for |
 | --- | --- |
-| Durchblick's C++ package (`find_package(durchblick 0.4)`), version 0.4 | everything |
+| Durchblick's C++ package (`find_package(xblick 0.5)`), version 0.5 | everything |
 | zenoh-c and zenoh-cpp 1.10 | everything |
 | Azure Kinect Sensor SDK (`find_package(k4a)`, `k4arecord`) | everything |
 | nlohmann_json | everything |
 | libjpeg or libjpeg-turbo | everything |
 | CUDA 12 toolkit with nvJPEG | optional: decoding on the GPU |
-| Body Tracking SDK 1.1 | optional: `durchblick-k4abt` |
+| Body Tracking SDK 1.1 | optional: `xblick-k4abt` |
 | ONNX Runtime for CUDA 12, Microsoft's release package (tested: 1.31.1) | body tracking on GPUs of compute capability 10 and newer |
 | TensorRT 10 (tested: 10.14.1) | body tracking in TensorRT mode |
 
@@ -26,26 +26,26 @@ The programs use the Zenoh router of the PC as their default session. When Durch
 
 | Option | Default | Effect |
 | --- | --- | --- |
-| `DURCHBLICK_K4A_CUDA` | `OFF` | Decode with nvJPEG and rectify with NPP on the GPU. Needs `CUDAToolkit_ROOT`. |
-| `DURCHBLICK_K4A_BODY_TRACKING` | `ON` when `k4abt_DIR` is in the environment | Build `durchblick-k4abt`. |
+| `XBLICK_K4A_CUDA` | `OFF` | Decode with nvJPEG and rectify with NPP on the GPU. Needs `CUDAToolkit_ROOT`. |
+| `XBLICK_K4A_BODY_TRACKING` | `ON` when `k4abt_DIR` is in the environment | Build `xblick-k4abt`. |
 | `k4abt_DIR` | | `<body tracking>/usr/lib/cmake/k4abt` |
-| `DURCHBLICK_K4A_ONNXRUNTIME_DIR` | | The directory of a current ONNX Runtime, for example `onnxruntime-linux-x64-gpu_cuda12-1.31.1`. |
-| `DURCHBLICK_K4A_TENSORRT_DIR` | | The directory of TensorRT, for example `TensorRT-10.14.1.48`. The programs then find TensorRT through their RPATH. |
+| `XBLICK_K4A_ONNXRUNTIME_DIR` | | The directory of a current ONNX Runtime, for example `onnxruntime-linux-x64-gpu_cuda12-1.31.1`. |
+| `XBLICK_K4A_TENSORRT_DIR` | | The directory of TensorRT, for example `TensorRT-10.14.1.48`. The programs then find TensorRT through their RPATH. |
 | `K4ABT_TEST_MODEL` | | The model for the `body_tracking` test: `<body tracking>/usr/bin/dnn_model_2_0_op11.onnx`. |
 | `K4ABT_TEST_PROCESSING` | | The processing mode of that test: `cpu`, `cuda` or `tensorrt`. |
 
 The full command with body tracking:
 
 ```bash
-cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="<durchblick>;<zenoh>;<k4a>;<nlohmann_json>" \
-  -DDURCHBLICK_K4A_CUDA=ON -DCUDAToolkit_ROOT=<cuda-12.8> \
-  -DDURCHBLICK_K4A_BODY_TRACKING=ON -Dk4abt_DIR=<body tracking>/usr/lib/cmake/k4abt \
-  -DDURCHBLICK_K4A_ONNXRUNTIME_DIR=<onnxruntime-linux-x64-gpu_cuda12-1.31.1> \
-  -DDURCHBLICK_K4A_TENSORRT_DIR=<TensorRT-10.14.1.48> \
+cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="<xblick>;<zenoh>;<k4a>;<nlohmann_json>" \
+  -DXBLICK_K4A_CUDA=ON -DCUDAToolkit_ROOT=<cuda-12.8> \
+  -DXBLICK_K4A_BODY_TRACKING=ON -Dk4abt_DIR=<body tracking>/usr/lib/cmake/k4abt \
+  -DXBLICK_K4A_ONNXRUNTIME_DIR=<onnxruntime-linux-x64-gpu_cuda12-1.31.1> \
+  -DXBLICK_K4A_TENSORRT_DIR=<TensorRT-10.14.1.48> \
   -DK4ABT_TEST_MODEL=<body tracking>/usr/bin/dnn_model_2_0_op11.onnx -DK4ABT_TEST_PROCESSING=cuda
 cmake --build build
 ctest --test-dir build
-cmake --install build --prefix <durchblick_k4a>
+cmake --install build --prefix <xblick_k4a>
 ```
 
 `ctest` needs these libraries on `LD_LIBRARY_PATH`: k4a with the depth engine, zenoh and k4abt.

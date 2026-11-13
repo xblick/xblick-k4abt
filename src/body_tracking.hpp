@@ -27,9 +27,9 @@
 
 #include <zenoh.hxx>
 
-#include "durchblick/msg.hpp"
+#include "xblick/msg.hpp"
 
-namespace durchblick::k4a_node
+namespace xblick::k4a_node
 {
     inline constexpr std::size_t kJointCount = 32;  // K4ABT_JOINT_COUNT
 
@@ -84,7 +84,7 @@ namespace durchblick::k4a_node
         std::string processing = "tensorrt";  // cpu, cuda, tensorrt (the SDK's processing modes on Linux)
         int gpu_device = 0;
         float smoothing = 0.0f;  // the SDK's temporal smoothing factor
-        // TensorRT's engine cache (created if missing; only with DURCHBLICK_K4A_ONNXRUNTIME_DIR); empty: the engine is
+        // TensorRT's engine cache (created if missing; only with XBLICK_K4A_ONNXRUNTIME_DIR); empty: the engine is
         // built at every start. Used with processing "tensorrt" only. The engines go into a subdirectory named after
         // the ONNX Runtime and TensorRT versions; subdirectories of other versions are deleted.
         std::string tensorrt_cache;
@@ -95,8 +95,8 @@ namespace durchblick::k4a_node
         std::function<void(const BodyResult&)> on_result;
     };
 
-    // $XDG_CACHE_HOME/durchblick-k4abt, else ~/.cache/durchblick-k4abt (throws if neither is set); "" in builds
-    // without DURCHBLICK_K4A_ONNXRUNTIME_DIR, which have no engine cache
+    // $XDG_CACHE_HOME/xblick-k4abt, else ~/.cache/xblick-k4abt (throws if neither is set); "" in builds
+    // without XBLICK_K4A_ONNXRUNTIME_DIR, which have no engine cache
     std::string default_tensorrt_cache();
 
     inline constexpr const char* kBodies = "bodies";
@@ -141,4 +141,4 @@ namespace durchblick::k4a_node
         struct Impl;
         std::unique_ptr<Impl> impl_;
     };
-}  // namespace durchblick::k4a_node
+}  // namespace xblick::k4a_node
