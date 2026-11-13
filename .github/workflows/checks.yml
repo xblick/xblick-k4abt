@@ -1,0 +1,15 @@
+# Checks that need neither the Azure Kinect SDKs nor a GPU. Building the programs and their tests needs Durchblick's
+# C++ package (built with the CUDA toolkit) and the Azure Kinect Sensor SDK: see docs/build.md.
+name: checks
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  references:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reference check (tools/check_references.sh)
+        run: tools/check_references.sh

@@ -1,0 +1,9 @@
+/* the symbol version libk4abt.so 1.1 imports (onnxruntime_compat.cpp) */
+VERS_1.10.0 {
+  global:
+    OrtGetApiBase;
+    OrtSessionOptionsAppendExecutionProvider_CUDA;
+    OrtSessionOptionsAppendExecutionProvider_Tensorrt; durchblick_onnxruntime_tensorrt_cache;
+  local:
+    *;
+};
