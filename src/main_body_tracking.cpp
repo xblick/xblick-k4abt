@@ -1,7 +1,7 @@
 // xblick-k4abt: Azure Kinect body tracking from a camera node's streams (body_tracking.hpp), in a process of its
 // own: on the camera's host (shared memory) or any other with a GPU (raw frames over the network).
 //
-//   xblick-k4abt [--base robot/azurekinect] [--model dnn_model_2_0_op11.onnx]
+//   xblick-k4abt [--base cam/azurekinect] [--model dnn_model_2_0_op11.onnx]
 //                    [--processing tensorrt|cuda|cpu] [--gpu-device 0] [--smoothing 0]
 //                    [--mask-min-x PX] [--mask-max-x PX] [--mask-max-z MM] [--max-rate HZ] [--tensorrt-cache DIR]
 //

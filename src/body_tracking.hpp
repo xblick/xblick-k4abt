@@ -79,7 +79,7 @@ namespace xblick::k4a_node
 
     struct BodyTrackingOptions
     {
-        std::string base = "robot/azurekinect";
+        std::string base = "cam/azurekinect";
         std::string model_path;          // the SDK's ONNX model (dnn_model_2_0_op11.onnx or the lite one)
         std::string processing = "tensorrt";  // cpu, cuda, tensorrt (the SDK's processing modes on Linux)
         int gpu_device = 0;

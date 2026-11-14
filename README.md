@@ -12,7 +12,7 @@ runs on a headless camera PC.
 
 ## What it publishes
 
-The node publishes below one base name. The default base is `robot/azurekinect`.
+The node publishes below one base name. The default base is `cam/azurekinect`.
 
 | Topic | Type | Content |
 | --- | --- | --- |
@@ -85,18 +85,18 @@ The other programs read the streams of that node.
 xblick-azure-kinect --playback take.mkv --loop
 # body tracking
 xblick-k4abt --model dnn_model_2_0_op11.onnx
-# coloured point clouds on robot/azurekinect/points, with Durchblick's point cloud node
-xblick-points --depth robot/azurekinect/depth --color robot/azurekinect/color
+# coloured point clouds on cam/azurekinect/points, with Durchblick's point cloud node
+xblick-points --depth cam/azurekinect/depth --color cam/azurekinect/color
 # a viewer on another host
-xblick rerun robot/azurekinect/color robot/azurekinect/depth robot/azurekinect/ir \
-  robot/azurekinect/depth_to_color --points robot/azurekinect/points --spawn --connect <camera host>
+xblick rerun cam/azurekinect/color cam/azurekinect/depth cam/azurekinect/ir \
+  cam/azurekinect/depth_to_color --points cam/azurekinect/points --spawn --connect <camera host>
 ```
 
 Most users change these options:
 
 | Option | Default | Effect |
 | --- | --- | --- |
-| `--base NAME` | `robot/azurekinect` | The base name of all topics. |
+| `--base NAME` | `cam/azurekinect` | The base name of all topics. |
 | `--cuda-device N\|none` | `0` in CUDA builds | The GPU that decodes the colour image and holds the CUDA rings. |
 | `--color-resolution MODE` | `720P` | The colour resolution. |
 | `--depth-mode MODE` | `NFOV_UNBINNED` | The depth mode. |

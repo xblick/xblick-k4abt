@@ -80,7 +80,7 @@ Durations: not recorded. Give `ctest` a timeout.
 
 ## Defaults
 
-- Base: `robot/azurekinect`. Topics below it: `color`, `color_rect`, `depth`, `ir`, `depth_to_color`,
+- Base: `cam/azurekinect`. Topics below it: `color`, `color_rect`, `depth`, `ir`, `depth_to_color`,
   `depth_to_color_rect`, `imu`, `tf_static`, `k4a_calibration`, `diagnostics`, `bodies`. `points` comes from
   `xblick-points`.
 - Mode: `fps` 30, `depth.mode` NFOV_UNBINNED, `color.resolution` 720P, `color.brightness` 128,
@@ -93,6 +93,6 @@ Durations: not recorded. Give `ctest` a timeout.
 - Zenoh: the PC's router at 127.0.0.1:7447, or `--connect`, `--listen`, `--zenoh-config`.
 - Standalone start: `zenohd`, then `xblick-azure-kinect [--cuda-device 0]` (or `--playback take.mkv --loop`),
   `xblick-k4abt --model dnn_model_2_0_op11.onnx`, `xblick-points --depth <base>/depth --color <base>/color`.
-  Look with `xblick rerun ... --spawn` and `xblick diagnostics robot`.
+  Look with `xblick rerun ... --spawn` and `xblick diagnostics cam`.
 - Tested mostly offline (recordings the SDK wrote, a rendered mannequin). Behaviour with a real device is largely
   unverified: docs/hardware-checks.md.

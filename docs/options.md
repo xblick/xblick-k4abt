@@ -22,7 +22,7 @@ Each program connects to the Zenoh router of its PC at `127.0.0.1:7447` by defau
 
 | Option | Default | Effect |
 | --- | --- | --- |
-| `--base NAME` | `robot/azurekinect` | The base name of all topics. |
+| `--base NAME` | `cam/azurekinect` | The base name of all topics. |
 | `--serial NUMBER` | none | Open the device with this serial number. |
 | `--index N` | `0` | Open the device with this index. |
 | `--playback FILE` | none | Play a recording. The file is an MKV of `k4arecorder` with MJPEG colour, depth and IR. |
@@ -92,7 +92,7 @@ frames through the routers.
 
 | Option | Default | Effect |
 | --- | --- | --- |
-| `--base NAME` | `robot/azurekinect` | The base name of the camera node. |
+| `--base NAME` | `cam/azurekinect` | The base name of the camera node. |
 | `--model FILE` | `$K4A_BODY_TRACKING_DNN_MODEL_FILEPATH` | The model, for example `dnn_model_2_0_op11.onnx`. |
 | `--processing tensorrt\|cuda\|cpu` | `tensorrt` | The processing mode of the SDK. |
 | `--gpu-device N` | `0` | The GPU. |
@@ -118,7 +118,7 @@ node that serves them.
 
 | Option | Effect |
 | --- | --- |
-| `--node BASE` | The node, for example `robot/azurekinect`. |
+| `--node BASE` | The node, for example `cam/azurekinect`. |
 | `--list` | List the parameter names. |
 | `--describe [NAME...]` | Print the descriptors. Without a name it prints all of them. |
 | `--get [NAME...]` | Print the values. Without a name it prints all of them. |

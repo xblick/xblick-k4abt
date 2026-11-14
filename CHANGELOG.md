@@ -2,6 +2,15 @@
 
 *The node's [overview](README.md). Versions before 0.3.0 are described in the git history only.*
 
+* **0.3.1** The default base name is `cam/azurekinect`, no longer `robot/azurekinect`, so that the default fits any
+  camera PC and follows the core's scheme `cam/<device>/<stream>`. All topics move with it (`cam/azurekinect/color`,
+  `cam/azurekinect/depth`, ..., `cam/azurekinect/bodies`), and so do the camera node `/cam/azurekinect` with its
+  parameters (a params file needs the key `/cam/azurekinect`) and the tracker's node `/cam/azurekinect/k4abt`. A
+  script that subscribes to `robot/azurekinect/...` needs the new names, or the programs started with the old name:
+  `xblick-azure-kinect --base robot/azurekinect` and `xblick-k4abt --base robot/azurekinect`. The tools
+  `k4a_depth_to_color_check` and `k4a_depth_to_color_mirror` follow (`--base` default `cam/azurekinect`, the mirror's
+  `--output` default `cam/azurekinect_sdk`).
+
 * **0.3.0** Builds against Durchblick 0.5, in which every name in code, on the wire and on disk is `xblick`. The
   programs take the same names; only the prose name of the project stays Durchblick. They work only with programs of
   Durchblick 0.5. Stream names, frame ids, options, parameters and the calibration record are unchanged. The TensorRT
