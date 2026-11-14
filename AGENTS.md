@@ -55,7 +55,7 @@ Durations: not recorded. Give `ctest` a timeout.
 | Stand-in details | `ReleaseEnv` at exit corrupts the heap with CUDA. TF32 moves joints by up to 35 mm, with TensorRT by up to 96 mm. | The stand-in skips `ReleaseEnv` and sets `NVIDIA_TF32_OVERRIDE=0` (it refuses another value). After any change: `body_tracking` test, joints within 1 mm of the SDK's CPU processing. |
 | Stand-in not found | The SDK's own `libonnxruntime.so.1.10.0` from `LD_LIBRARY_PATH` wins. | Link with `-Wl,--disable-new-dtags` (`DT_RPATH`, searched before `LD_LIBRARY_PATH`). The default `RUNPATH` comes after it. |
 | RPATH lost at install | Installed programs do not find CUDA, TensorRT, the SDKs. | `CMAKE_INSTALL_RPATH_USE_LINK_PATH` must stay on. |
-| TensorRT engine cache | First start takes about 10 s. Cache 240 MB per GPU architecture in `~/.cache/xblick-k4abt` (`--tensorrt-cache`). | Expected. The program deletes subdirectories of other ONNX Runtime/TensorRT versions at the start. |
+| TensorRT engine cache | First start takes about 10 s. Cache 240 MB per GPU architecture in `~/.cache/xblick/k4abt` (`xblick::cache_dir`; `--tensorrt-cache`). | Expected. The program deletes subdirectories of other ONNX Runtime/TensorRT versions at the start. |
 | MJPEG without Huffman tables | nvJPEG and other decoders fail. | The node inserts libjpeg's standard tables. Keep that step. |
 | Body tracking build switch | Body tracking is built when `k4abt_DIR` is in the environment. With `k4abt_DIR` from elsewhere and no ONNX Runtime directory the build stops. | Set `XBLICK_K4A_ONNXRUNTIME_DIR`, or `-DXBLICK_K4A_BODY_TRACKING=OFF`. |
 | Two programs on one device | Only one program can open a device. | No other driver may open the same camera. |
@@ -89,7 +89,7 @@ Durations: not recorded. Give `ctest` a timeout.
 - Frames: `AzureKinectDepthCamera`, `AzureKinectCamera`, `AzureKinectImu`. `source`: `cam`, with playback
   `recording`.
 - Tracker: `--processing tensorrt`, `--model` from `$K4A_BODY_TRACKING_DNN_MODEL_FILEPATH`, cache
-  `$XDG_CACHE_HOME/xblick-k4abt` or `~/.cache/xblick-k4abt`.
+  `xblick::cache_dir("k4abt")`: `~/.cache/xblick/k4abt`, `$XDG_CACHE_HOME/xblick/k4abt`, `$XBLICK_HOME/cache/k4abt`.
 - Zenoh: the PC's router at 127.0.0.1:7447, or `--connect`, `--listen`, `--zenoh-config`.
 - Standalone start: `zenohd`, then `xblick-azure-kinect [--cuda-device 0]` (or `--playback take.mkv --loop`),
   `xblick-k4abt --model dnn_model_2_0_op11.onnx`, `xblick-points --depth <base>/depth --color <base>/color`.

@@ -211,7 +211,8 @@ With the stand-in, every joint is within 1 mm of the SDK's own ONNX Runtime on t
 [performance.md](performance.md#body-tracking) has the times.
 
 TensorRT builds its engine at the first start, which takes 10 s. It keeps the engine in the directory of
-`--tensorrt-cache`, which is `~/.cache/xblick-k4abt` by default. The cache needs 240 MB per GPU architecture. It
+`--tensorrt-cache`, which is the node's cache directory `~/.cache/xblick/k4abt` by default (Durchblick's
+[files page](https://github.com/xblick/xblick/blob/main/docs/reference/files.md) names the variables that move it). The cache needs 240 MB per GPU architecture. It
 has one subdirectory per ONNX Runtime and TensorRT version, for example `onnxruntime-1.31.1_tensorrt-10.14.1.48`. The
 program deletes the subdirectories of other versions at the start, because engines of another TensorRT do not load.
 

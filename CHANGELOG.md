@@ -2,6 +2,13 @@
 
 *The node's [overview](README.md). Versions before 0.3.0 are described in the git history only.*
 
+* **0.3.2** `xblick-k4abt` keeps its TensorRT engine cache in the node's cache directory of Durchblick 0.5.5,
+  `~/.cache/xblick/k4abt` (`xblick::cache_dir("k4abt")`; `XDG_CACHE_HOME` moves it to `$XDG_CACHE_HOME/xblick/k4abt`,
+  `XBLICK_HOME` to `$XBLICK_HOME/cache/k4abt`), no longer in `~/.cache/xblick-k4abt` or
+  `$XDG_CACHE_HOME/xblick-k4abt`. The first start builds the engine again (about 10 s), and the old directory can be
+  deleted. `--tensorrt-cache DIR` still sets the directory explicitly. The build needs Durchblick 0.5.5 or a later 0.5
+  (`find_package(xblick 0.5.5)`).
+
 * **0.3.1** Two defaults change: the base name and the `source` label.
 
   The default base name is `cam/azurekinect`, no longer `robot/azurekinect`, so that the default fits any

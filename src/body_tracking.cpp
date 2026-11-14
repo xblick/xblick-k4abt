@@ -23,6 +23,7 @@
 
 #include "calibration.hpp"
 #include "xblick/camera.hpp"
+#include "xblick/paths.hpp"
 #include "xblick/protocol.hpp"
 #include "node.hpp"
 
@@ -624,15 +625,7 @@ namespace xblick::k4a_node
     std::string default_tensorrt_cache()
     {
 #ifdef XBLICK_K4A_ONNXRUNTIME_COMPAT
-        if (const char* xdg = std::getenv("XDG_CACHE_HOME"); xdg != nullptr and *xdg != 0)
-        {
-            return std::string(xdg) + "/xblick-k4abt";
-        }
-        if (const char* home = std::getenv("HOME"); home != nullptr and *home != 0)
-        {
-            return std::string(home) + "/.cache/xblick-k4abt";
-        }
-        throw std::runtime_error("neither XDG_CACHE_HOME nor HOME is set: give the TensorRT engine cache explicitly");
+        return xblick::cache_dir("k4abt").string();
 #else
         return "";
 #endif

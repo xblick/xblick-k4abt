@@ -100,7 +100,7 @@ frames through the routers.
 | `--mask-min-x PX`, `--mask-max-x PX` | `-1`, off | The tracker ignores depth and IR outside these image columns. Live: it changes while the node runs. |
 | `--mask-max-z MM` | `-1`, off | The tracker ignores depth and IR beyond this distance. Live: it changes while the node runs. |
 | `--max-rate HZ` | `0`, every frame | Track at most this many frames per second. Live: it changes while the node runs. |
-| `--tensorrt-cache DIR` | `$XDG_CACHE_HOME/xblick-k4abt`, else `~/.cache/xblick-k4abt` | The directory of TensorRT's engine cache. An empty value builds the engine at every start, which takes 10 s. |
+| `--tensorrt-cache DIR` | `~/.cache/xblick/k4abt`, moved by `XBLICK_HOME` and `XDG_CACHE_HOME` | The directory of TensorRT's engine cache. An empty value builds the engine at every start, which takes 10 s. |
 | `--status-period SECONDS` | `5` | The period of the status line on the terminal. |
 
 `--tensorrt-cache` exists only in builds with `XBLICK_K4A_ONNXRUNTIME_DIR`, and the program accepts it only with

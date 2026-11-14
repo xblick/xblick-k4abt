@@ -9,7 +9,7 @@
 # xblick_k4a (xblick_k4a::xblick_k4a, xblick_k4a::xblick_k4abt), for programs that build on the
 # node and the tracker.
 cmake_minimum_required(VERSION 3.22)
-project(xblick_azure_kinect VERSION 0.3.1 LANGUAGES CXX)
+project(xblick_azure_kinect VERSION 0.3.2 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -33,10 +33,11 @@ option(XBLICK_K4A_BODY_TRACKING "build xblick-k4abt (Azure Kinect Body Tracking 
        ${xblick_k4a_body_tracking_default})
 message(STATUS "xblick_k4a: body tracking ${XBLICK_K4A_BODY_TRACKING}")
 
-# Durchblick's 0.5 line (its CMake package accepts its own minor version only): publish_jpeg, pin_host,
+# Durchblick's 0.5 line from 0.5.5 (its CMake package accepts its own minor version only, so 0.5.5 means 0.5.5 or a
+# later 0.5.x; 0.5.5 brings xblick::cache_dir for the TensorRT engine cache): publish_jpeg, pin_host,
 # StaticTransformPublisher, Imu, diagnostics, CameraInfo::read_file, Options, Parameters, RVL for depth, ring keys with
 # the host; point clouds (the tests use its point cloud node xblick-points when Durchblick was built with it)
-find_package(xblick 0.5 REQUIRED OPTIONAL_COMPONENTS points)
+find_package(xblick 0.5.5 REQUIRED OPTIONAL_COMPONENTS points)
 find_package(k4a 1.4 REQUIRED)
 find_package(k4arecord 1.4 REQUIRED)
 find_package(nlohmann_json 3 REQUIRED)

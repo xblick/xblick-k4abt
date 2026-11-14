@@ -6,9 +6,9 @@
 //                    [--mask-min-x PX] [--mask-max-x PX] [--mask-max-z MM] [--max-rate HZ] [--tensorrt-cache DIR]
 //
 // --model defaults to $K4A_BODY_TRACKING_DNN_MODEL_FILEPATH. --tensorrt-cache (TensorRT's engine
-// cache; built with XBLICK_K4A_ONNXRUNTIME_DIR only) defaults to $XDG_CACHE_HOME/xblick-k4abt, else
-// ~/.cache/xblick-k4abt; an empty value builds the engine at every start (10 s). --processing defaults to tensorrt
-// (TensorRT 10 on LD_LIBRARY_PATH). Zenoh: the PC's router (127.0.0.1:7447; the camera on another PC through the
+// cache; built with XBLICK_K4A_ONNXRUNTIME_DIR only) defaults to the node's cache directory ~/.cache/xblick/k4abt
+// (xblick::cache_dir: XBLICK_HOME, XDG_CACHE_HOME); an empty value builds the engine at every start (10 s).
+// --processing defaults to tensorrt (TensorRT 10 on LD_LIBRARY_PATH). Zenoh: the PC's router (127.0.0.1:7447; the camera on another PC through the
 // routers), or --listen/--connect ENDPOINT..., or --zenoh-config FILE. Every option is also a parameter of the node
 // <base>/k4abt (xblick/options.hpp): the masks and --max-rate change while it runs, the others are read-only.
 #include <atomic>
@@ -59,7 +59,17 @@ int main(int argc, char** argv)
                                                  .parameter = {.unit = "mm"}});
     options.add("max-rate", 0.0, {.help = "at most this many pairs a second to the tracker; 0: every pair", .live = true,
                                   .parameter = {.unit = "Hz", .floating_range = FloatingPointRange{0.0, 1000.0, 0.0}}});
-    options.add("tensorrt-cache", default_tensorrt_cache(),
+    std::string tensorrt_cache;  // the default; xblick::cache_dir refuses a relative XBLICK_HOME or HOME
+    try
+    {
+        tensorrt_cache = default_tensorrt_cache();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "xblick-k4abt: " << e.what() << std::endl;
+        return 1;
+    }
+    options.add("tensorrt-cache", tensorrt_cache,
                 {.help = "TensorRT's engine cache (--processing tensorrt); empty: the engine built at every start",
                  .metavar = "DIR"});
     options.add("status-period", 5.0, {.help = "seconds between the status lines", .parameter = {.unit = "s"}});

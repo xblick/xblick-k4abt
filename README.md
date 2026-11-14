@@ -36,7 +36,7 @@ point clouds.
 
 | Need | For |
 | --- | --- |
-| Durchblick 0.5, C++ package | everything |
+| Durchblick 0.5.5 or a later 0.5, C++ package | everything |
 | zenoh-c and zenoh-cpp 1.10 | everything |
 | Azure Kinect Sensor SDK with `k4arecord` and the depth engine | everything |
 | nlohmann_json, libjpeg or libjpeg-turbo | everything |

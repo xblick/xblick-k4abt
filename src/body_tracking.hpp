@@ -95,8 +95,8 @@ namespace xblick::k4a_node
         std::function<void(const BodyResult&)> on_result;
     };
 
-    // $XDG_CACHE_HOME/xblick-k4abt, else ~/.cache/xblick-k4abt (throws if neither is set); "" in builds
-    // without XBLICK_K4A_ONNXRUNTIME_DIR, which have no engine cache
+    // the node's cache directory, xblick::cache_dir("k4abt") (xblick/paths.hpp: ~/.cache/xblick/k4abt, moved by
+    // XBLICK_HOME and XDG_CACHE_HOME); "" in builds without XBLICK_K4A_ONNXRUNTIME_DIR, which have no engine cache
     std::string default_tensorrt_cache();
 
     inline constexpr const char* kBodies = "bodies";

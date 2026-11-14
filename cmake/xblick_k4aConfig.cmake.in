@@ -6,7 +6,7 @@
 include(CMakeFindDependencyMacro)
 set(xblick_k4a_CUDA @XBLICK_K4A_CUDA@)
 set(xblick_k4a_BODY_TRACKING @XBLICK_K4A_BODY_TRACKING@)
-find_dependency(xblick 0.5)
+find_dependency(xblick 0.5.5)
 find_dependency(k4a 1.4)
 find_dependency(k4arecord 1.4)
 find_dependency(nlohmann_json 3)

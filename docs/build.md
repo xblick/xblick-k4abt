@@ -6,7 +6,7 @@ This page lists the dependencies, the CMake options and the tests. The README ha
 
 | Dependency | Needed for |
 | --- | --- |
-| Durchblick's C++ package (`find_package(xblick 0.5)`), version 0.5 | everything |
+| Durchblick's C++ package (`find_package(xblick 0.5.5)`), version 0.5.5 or a later 0.5 | everything |
 | zenoh-c and zenoh-cpp 1.10 | everything |
 | Azure Kinect Sensor SDK (`find_package(k4a)`, `k4arecord`) | everything |
 | nlohmann_json | everything |
