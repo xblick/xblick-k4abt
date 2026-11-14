@@ -1,6 +1,9 @@
 # xblick-azure-kinect
 
 [![xblick core](https://img.shields.io/pypi/v/xblick?label=xblick%20core&color=blue)](https://github.com/xblick/xblick)
+[![checks](https://github.com/xblick/xblick-azure-kinect/actions/workflows/checks.yml/badge.svg)](https://github.com/xblick/xblick-azure-kinect/actions/workflows/checks.yml)
+[![licence](https://img.shields.io/badge/licence-Apache--2.0-blue)](LICENSE)
+[![platform](https://img.shields.io/badge/platform-Linux%20x86__64-lightgrey)](README.md#requirements)
 
 `xblick-azure-kinect` publishes the colour, depth, IR and IMU data of an Azure Kinect as
 [Durchblick](https://github.com/xblick/xblick) streams, at up to 30 captures per second.
