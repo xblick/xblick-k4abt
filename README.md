@@ -1,5 +1,7 @@
 # xblick-azure-kinect
 
+[![xblick core](https://img.shields.io/pypi/v/xblick?label=xblick%20core&color=blue)](https://github.com/xblick/xblick)
+
 `xblick-azure-kinect` publishes the colour, depth, IR and IMU data of an Azure Kinect as
 [Durchblick](https://github.com/xblick/xblick) streams, at up to 30 captures per second.
 `xblick-k4abt` is a second program that reads those streams and publishes the bodies that the Azure Kinect Body
