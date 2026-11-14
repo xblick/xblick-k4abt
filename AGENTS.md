@@ -86,7 +86,7 @@ Durations: not recorded. Give `ctest` a timeout.
 - Mode: `fps` 30, `depth.mode` NFOV_UNBINNED, `color.resolution` 720P, `color.brightness` 128,
   `clock.offset_estimator` mean. Ring slots per stream: 32.
 - `--cuda-device`: 0 in CUDA builds, else none. `--depth-engine-gpu`: the CUDA device, else 0.
-- Frames: `AzureKinectDepthCamera`, `AzureKinectCamera`, `AzureKinectImu`. `source`: `robot`, with playback
+- Frames: `AzureKinectDepthCamera`, `AzureKinectCamera`, `AzureKinectImu`. `source`: `cam`, with playback
   `recording`.
 - Tracker: `--processing tensorrt`, `--model` from `$K4A_BODY_TRACKING_DNN_MODEL_FILEPATH`, cache
   `$XDG_CACHE_HOME/xblick-k4abt` or `~/.cache/xblick-k4abt`.

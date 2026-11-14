@@ -28,7 +28,7 @@ Each program connects to the Zenoh router of its PC at `127.0.0.1:7447` by defau
 | `--playback FILE` | none | Play a recording. The file is an MKV of `k4arecorder` with MJPEG colour, depth and IR. |
 | `--loop` | off | Start the recording again at its end. |
 | `--no-realtime` | off | Play the recording without its original pace. |
-| `--source NAME` | `robot`, with `--playback`: `recording` | The `source` field in the attachment of every frame. |
+| `--source NAME` | `cam`, with `--playback`: `recording` | The `source` field in the attachment of every frame. |
 | `--status-period SECONDS` | `5` | The period of the status line on the terminal. |
 
 ### Parameters

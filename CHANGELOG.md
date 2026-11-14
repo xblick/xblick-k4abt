@@ -2,7 +2,9 @@
 
 *The node's [overview](README.md). Versions before 0.3.0 are described in the git history only.*
 
-* **0.3.1** The default base name is `cam/azurekinect`, no longer `robot/azurekinect`, so that the default fits any
+* **0.3.1** Two defaults change: the base name and the `source` label.
+
+  The default base name is `cam/azurekinect`, no longer `robot/azurekinect`, so that the default fits any
   camera PC and follows the core's scheme `cam/<device>/<stream>`. All topics move with it (`cam/azurekinect/color`,
   `cam/azurekinect/depth`, ..., `cam/azurekinect/bodies`), and so do the camera node `/cam/azurekinect` with its
   parameters (a params file needs the key `/cam/azurekinect`) and the tracker's node `/cam/azurekinect/k4abt`. A
@@ -10,6 +12,11 @@
   `xblick-azure-kinect --base robot/azurekinect` and `xblick-k4abt --base robot/azurekinect`. The tools
   `k4a_depth_to_color_check` and `k4a_depth_to_color_mirror` follow (`--base` default `cam/azurekinect`, the mirror's
   `--output` default `cam/azurekinect_sdk`).
+
+  The default `source` label of the camera node in every frame's info record is `cam`, no longer `robot`, as in the
+  core's `xblick cam` (with `--playback` it stays `recording`). A reader that filters on `source == "robot"` needs the
+  new label, or the node started with `--source robot`. Both old values together:
+  `xblick-azure-kinect --base robot/azurekinect --source robot`.
 
 * **0.3.0** Builds against Durchblick 0.5, in which every name in code, on the wire and on disk is `xblick`. The
   programs take the same names; only the prose name of the project stays Durchblick. They work only with programs of
