@@ -46,7 +46,7 @@ point clouds.
 | Azure Kinect Sensor SDK 1.4 with `k4arecord` and the depth engine | everything |
 | nlohmann_json, libjpeg or libjpeg-turbo, libpng | everything |
 | NVIDIA GPU and driver with EGL, GLVND's `libGL` and `libX11` | the depth engine without an X server |
-| CUDA 12 toolkit with nvJPEG and NPP | optional: colour decoding on the GPU, CUDA rings, `xblick-points` |
+| CUDA toolkit 12 or newer with nvJPEG and NPP (tested: 12.8; body tracking needs 12) | optional: colour decoding on the GPU, CUDA rings, `xblick-points` |
 | Azure Kinect Body Tracking SDK 1.1 | optional: `xblick-k4abt` |
 | ONNX Runtime for CUDA 12 (tested: 1.31.1) and cuDNN 9 (tested: 9.15) | body tracking |
 | TensorRT 10 (tested: 10.14.1) | body tracking in TensorRT mode, which is the default |
@@ -69,9 +69,11 @@ tools/setup.sh                    # add --body-tracking for xblick-k4abt
 - If Ubuntu packages are missing, the script stops and prints the `sudo apt install` command for them.
 - If the udev rule for the camera is missing, the script prints the commands that install it and goes on. Without
   the rule, only root can open the camera.
-- The script builds the CUDA parts when `nvidia-smi` lists a GPU. They need a CUDA 12 toolkit at `/usr/local/cuda`,
-  or at `--cuda-toolkit DIR`. `--no-gpu` builds without them.
-- `--body-tracking` needs the CUDA parts and downloads 11 GB.
+- The script builds the CUDA parts when `nvidia-smi` lists a GPU. They need a CUDA toolkit, 12 or newer, at
+  `/usr/local/cuda` or at `--cuda-toolkit DIR`. Tested: 12.8; another version gives a warning and is not tested.
+  `--no-gpu` builds without them.
+- `--body-tracking` needs the CUDA parts and downloads 11 GB. It needs a CUDA 12 toolkit: the pinned ONNX Runtime,
+  cuDNN and TensorRT are builds for CUDA 12 and load its libraries by name.
 - A second call does only what changed. `tools/setup.sh --help` lists the options.
 - We tested the script on Ubuntu 24.04 with `--no-gpu`, and with the CUDA parts and `--body-tracking`, without a
   camera. [docs/build.md](docs/build.md#what-was-tested) lists what was not tested.

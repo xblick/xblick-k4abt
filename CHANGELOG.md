@@ -2,6 +2,10 @@
 
 *The node's [overview](README.md). Versions before 0.3.0 are described in the git history only.*
 
+* **0.3.4** `tools/setup.sh` accepts a CUDA toolkit of version 12 or newer for the node's CUDA parts (nvJPEG, NPP, CUDA
+  rings). A version other than the tested 12.8 gives a warning; CUDA 13 is not tested. `--body-tracking` still needs
+  CUDA 12, because the pinned ONNX Runtime, cuDNN and TensorRT are builds for it. The package check accepts multiarch
+  installs. Compatible with earlier clients: nothing on the wire changed.
 * **0.3.3** `tools/setup.sh` sets the node up from scratch on Ubuntu 24.04: it downloads the prerequisites at pinned
   versions with sha256 checksums into Durchblick's cache directory (`~/.cache/xblick/azure-kinect`), builds and tests
   the node in `build-setup/` and installs it in `install/` with `install/env.sh`. It uses no `sudo`. It prints the

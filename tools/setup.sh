@@ -10,7 +10,8 @@
 # * The build in build-setup/, the tests (ctest), the installation in install/ with install/env.sh, which puts the
 #   programs on PATH.
 # * Without an option, the CUDA parts are built when nvidia-smi lists a GPU. --cuda: always. --no-gpu: never. They
-#   need a CUDA 12 toolkit with nvJPEG and NPP, at /usr/local/cuda or at --cuda-toolkit DIR.
+#   need a CUDA toolkit with nvJPEG and NPP, at /usr/local/cuda or at --cuda-toolkit DIR: 12 or newer (tested: 12.8,
+#   another version gives a warning), and 12 with --body-tracking.
 # * --body-tracking adds xblick-k4abt: Microsoft's Body Tracking SDK, ONNX Runtime, cuDNN and TensorRT (11 GB of
 #   downloads). It needs the CUDA parts.
 #
@@ -29,7 +30,7 @@ tests and installs it in install/. Afterwards: source install/env.sh.
   --cuda              build the CUDA parts (nvJPEG decoding, NPP rectification, xblick-points); default when
                       nvidia-smi lists a GPU
   --no-gpu            build without CUDA (the depth engine still needs an NVIDIA GPU with EGL at run time)
-  --cuda-toolkit DIR  the CUDA 12 toolkit with nvJPEG and NPP (default /usr/local/cuda)
+  --cuda-toolkit DIR  the CUDA toolkit, 12 or newer, with nvJPEG and NPP (default /usr/local/cuda)
   --body-tracking     also build xblick-k4abt (Body Tracking SDK 1.1.2, ONNX Runtime 1.31.1, cuDNN 9.15,
                       TensorRT 10.14; 11 GB of downloads); needs the CUDA parts
   -h, --help          this text
@@ -126,12 +127,25 @@ if [[ $gpu == on ]]; then
         die "no CUDA toolkit at $toolkit: sudo apt install cuda-toolkit-12-8 (NVIDIA's repository," \
             "https://developer.nvidia.com/cuda-12-8-1-download-archive), or --cuda-toolkit DIR, or --no-gpu"
     toolkit_version=$(sed -n '/"cuda"/,/}/s/.*"version" *: *"\([0-9.]*\)".*/\1/p' "$toolkit/version.json" | head -1)
-    [[ $toolkit_version == 12.* ]] ||
-        die "the CUDA toolkit at $toolkit is $toolkit_version, the node needs 12: sudo apt install cuda-toolkit-12-8," \
-            "or --cuda-toolkit DIR"
-    for file in include/nvjpeg.h lib64/libnvjpeg.so lib64/libnppig.so lib64/libcublas.so.12; do
-        [[ -e $toolkit/$file ]] || die "the CUDA toolkit at $toolkit has no $file: sudo apt install cuda-toolkit-12-8"
+    toolkit_major=${toolkit_version%%.*}
+    [[ $toolkit_major =~ ^[0-9]+$ ]] || die "cannot read the CUDA version from $toolkit/version.json"
+    ((toolkit_major >= 12)) ||
+        die "the CUDA toolkit at $toolkit is $toolkit_version, the node needs 12 or newer:" \
+            "sudo apt install cuda-toolkit-12-8, or --cuda-toolkit DIR, or --no-gpu"
+    needed=(include/nvjpeg.h lib64/libnvjpeg.so lib64/libnppig.so)
+    if [[ $body_tracking == 1 ]]; then
+        # the pinned ONNX Runtime, cuDNN and TensorRT are builds for CUDA 12 and load its libraries by name
+        ((toolkit_major == 12)) ||
+            die "the CUDA toolkit at $toolkit is $toolkit_version, but --body-tracking needs CUDA 12 (the pinned" \
+                "ONNX Runtime, cuDNN and TensorRT are built for it): --cuda-toolkit DIR of a CUDA 12 toolkit," \
+                "or setup without --body-tracking"
+        needed+=(lib64/libcublas.so.12)
+    fi
+    for file in "${needed[@]}"; do
+        [[ -e $toolkit/$file ]] || die "the CUDA toolkit at $toolkit has no $file (nvJPEG and NPP are needed)"
     done
+    [[ $toolkit_version == 12.8* ]] ||
+        echo "setup.sh: WARNING: CUDA $toolkit_version is not tested with this node (tested: 12.8); going on" >&2
 fi
 
 # ------------------------------------------------------------------------------------------------- the cache

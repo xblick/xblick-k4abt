@@ -13,7 +13,7 @@ CMake options and the tests.
 | Azure Kinect Sensor SDK 1.4 (`find_package(k4a)`, `k4arecord`) with the depth engine | everything |
 | nlohmann_json | everything |
 | libjpeg or libjpeg-turbo, libpng (Durchblick needs it), EGL | everything |
-| CUDA 12 toolkit with nvJPEG and NPP | optional: decoding and rectification on the GPU, `xblick-points` |
+| CUDA toolkit 12 or newer with nvJPEG and NPP (tested: 12.8; body tracking needs 12) | optional: decoding and rectification on the GPU, `xblick-points` |
 | Body Tracking SDK 1.1 | optional: `xblick-k4abt` |
 | ONNX Runtime for CUDA 12, Microsoft's release package (tested: 1.31.1) | body tracking |
 | cuDNN 9 (tested: 9.15) | body tracking: ONNX Runtime's CUDA provider |
@@ -72,7 +72,7 @@ What needs root, the script checks and leaves to you:
 | What | Check | When it is missing |
 | --- | --- | --- |
 | Ubuntu packages: `cmake ninja-build g++ curl unzip xz-utils libjpeg-turbo8-dev libpng-dev libegl-dev libgl-dev libgl1 libx11-6 libudev1`, with body tracking `libgomp1` | `dpkg-query` | The script stops and prints `sudo apt install` with the missing packages. |
-| The CUDA 12 toolkit with nvJPEG and NPP | `<toolkit>/version.json`, `bin/nvcc`, the nvJPEG, NPP and cuBLAS files | The script stops and names the package `cuda-toolkit-12-8` of NVIDIA's repository, `--cuda-toolkit DIR` and `--no-gpu`. |
+| A CUDA toolkit, 12 or newer, with nvJPEG and NPP (12 with `--body-tracking`; a version other than 12.8 gives a warning) | `<toolkit>/version.json`, `bin/nvcc`, the nvJPEG, NPP and cuBLAS files | The script stops and names the package `cuda-toolkit-12-8` of NVIDIA's repository, `--cuda-toolkit DIR` and `--no-gpu`. |
 | The udev rule for the camera | a rule for the device `045e:097c` in `/etc/udev/rules.d` or `/lib/udev/rules.d` | The script prints the commands that copy the rule there and goes on. |
 
 | Option | Effect |
@@ -80,7 +80,7 @@ What needs root, the script checks and leaves to you:
 | none | The script builds the CUDA parts when `nvidia-smi` lists a GPU. |
 | `--cuda` | The script always builds the CUDA parts. |
 | `--no-gpu` | The script builds without CUDA. The depth engine still needs an NVIDIA GPU with EGL at run time. |
-| `--cuda-toolkit DIR` | The CUDA 12 toolkit. The default is `/usr/local/cuda`. |
+| `--cuda-toolkit DIR` | The CUDA toolkit (12 or newer; 12 with `--body-tracking`). The default is `/usr/local/cuda`. |
 | `--body-tracking` | The script also builds `xblick-k4abt`. It needs the CUDA parts. The `body_tracking` test uses TensorRT. |
 
 With the CUDA parts, the script builds Durchblick with its point cloud node and takes `cuda.h` from the toolkit.
