@@ -9,7 +9,7 @@
 # xblick_k4a (xblick_k4a::xblick_k4a, xblick_k4a::xblick_k4abt), for programs that build on the
 # node and the tracker.
 cmake_minimum_required(VERSION 3.22)
-project(xblick_azure_kinect VERSION 0.3.2 LANGUAGES CXX)
+project(xblick_azure_kinect VERSION 0.3.3 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -124,6 +124,15 @@ if(XBLICK_K4A_BODY_TRACKING)
         message(FATAL_ERROR "XBLICK_K4A_TENSORRT_DIR (${XBLICK_K4A_TENSORRT_DIR}) has no lib/libnvinfer.so.10")
       endif()
       target_link_options(onnxruntime_compat INTERFACE "-Wl,-rpath,${XBLICK_K4A_TENSORRT_DIR}/lib")
+    endif()
+    # cuDNN 9 for the CUDA provider, the same way, where the CUDA toolkit has none (NVIDIA's toolkit does not bring
+    # it); without it, cuDNN has to be in the toolkit's library directory or on LD_LIBRARY_PATH
+    set(XBLICK_K4A_CUDNN_DIR "" CACHE PATH "cuDNN 9 package for body tracking (its lib/libcudnn.so.9)")
+    if(XBLICK_K4A_CUDNN_DIR)
+      if(NOT EXISTS "${XBLICK_K4A_CUDNN_DIR}/lib/libcudnn.so.9")
+        message(FATAL_ERROR "XBLICK_K4A_CUDNN_DIR (${XBLICK_K4A_CUDNN_DIR}) has no lib/libcudnn.so.9")
+      endif()
+      target_link_options(onnxruntime_compat INTERFACE "-Wl,-rpath,${XBLICK_K4A_CUDNN_DIR}/lib")
     endif()
     set(K4ABT_ONNXRUNTIME onnxruntime_compat)
   else()

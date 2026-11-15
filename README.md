@@ -39,14 +39,16 @@ point clouds.
 
 | Need | For |
 | --- | --- |
+| Linux on x86-64. The setup script is tested on Ubuntu 24.04. | everything |
+| CMake 3.24 or newer, Ninja, a C++20 compiler | the build |
 | Durchblick 0.5.5 or a later 0.5, C++ package | everything |
 | zenoh-c and zenoh-cpp 1.10 | everything |
-| Azure Kinect Sensor SDK with `k4arecord` and the depth engine | everything |
-| nlohmann_json, libjpeg or libjpeg-turbo | everything |
-| NVIDIA driver with EGL, GLVND's `libGL` and `libX11` | the depth engine without an X server |
-| CUDA 12 toolkit with nvJPEG | optional: colour decoding on the GPU, CUDA rings |
+| Azure Kinect Sensor SDK 1.4 with `k4arecord` and the depth engine | everything |
+| nlohmann_json, libjpeg or libjpeg-turbo, libpng | everything |
+| NVIDIA GPU and driver with EGL, GLVND's `libGL` and `libX11` | the depth engine without an X server |
+| CUDA 12 toolkit with nvJPEG and NPP | optional: colour decoding on the GPU, CUDA rings, `xblick-points` |
 | Azure Kinect Body Tracking SDK 1.1 | optional: `xblick-k4abt` |
-| ONNX Runtime for CUDA 12 (tested: 1.31.1) | body tracking on GPUs of compute capability 10 and newer |
+| ONNX Runtime for CUDA 12 (tested: 1.31.1) and cuDNN 9 (tested: 9.15) | body tracking |
 | TensorRT 10 (tested: 10.14.1) | body tracking in TensorRT mode, which is the default |
 
 Every program connects to the Zenoh router of its PC (`zenohd` on port 7447). Durchblick's
@@ -55,25 +57,41 @@ the routers.
 
 ## Install
 
-1. Build and test the project. Replace each `<...>` with the install prefix of that package.
+`tools/setup.sh` installs the prerequisites, builds the programs, runs the tests and installs the programs in
+`install/`. It does not use `sudo`.
 
-   ```bash
-   cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="<xblick>;<zenoh>;<k4a>;<nlohmann_json>" \
-     -DXBLICK_K4A_CUDA=ON -DCUDAToolkit_ROOT=<cuda-12.8>
-   cmake --build build
-   ctest --test-dir build
-   ```
+```bash
+git clone https://github.com/xblick/xblick-azure-kinect.git
+cd xblick-azure-kinect
+tools/setup.sh                    # add --body-tracking for xblick-k4abt
+```
 
-2. Install it, if another project must find it as the CMake package `xblick_k4a`.
+- If Ubuntu packages are missing, the script stops and prints the `sudo apt install` command for them.
+- If the udev rule for the camera is missing, the script prints the commands that install it and goes on. Without
+  the rule, only root can open the camera.
+- The script builds the CUDA parts when `nvidia-smi` lists a GPU. They need a CUDA 12 toolkit at `/usr/local/cuda`,
+  or at `--cuda-toolkit DIR`. `--no-gpu` builds without them.
+- `--body-tracking` needs the CUDA parts and downloads 11 GB.
+- A second call does only what changed. `tools/setup.sh --help` lists the options.
+- We tested the script on Ubuntu 24.04 with `--no-gpu`, and with the CUDA parts and `--body-tracking`, without a
+  camera. [docs/build.md](docs/build.md#what-was-tested) lists what was not tested.
 
-   ```bash
-   cmake --install build --prefix <xblick_k4a>
-   ```
-
-The tests need no camera. [docs/build.md](docs/build.md) has the options for body tracking, the libraries that the
-tests need on `LD_LIBRARY_PATH`, and what each test checks.
+The script keeps the prerequisites in Durchblick's cache directory, by default `~/.cache/xblick/azure-kinect`.
+Every download has a pinned version and a sha256 checksum. Microsoft's Sensor SDK and Body Tracking SDK come from
+Microsoft's package repository, and NVIDIA's cuDNN and TensorRT from NVIDIA's download server. These binaries are
+under their makers' licence terms. The script prints the name of the terms and their link when it starts such a
+download.
+[docs/build.md](docs/build.md) lists every download with its source and terms, the manual build with CMake and what
+each test checks.
 
 ## Run
+
+In each new shell, put the programs on `PATH` first. Start one Zenoh router per PC, unless one runs already.
+
+```bash
+source install/env.sh
+zenohd --no-multicast-scouting -l tcp/0.0.0.0:7447 &
+```
 
 Start the camera node. It prints `ready` when the streams are up.
 
@@ -86,9 +104,9 @@ The other programs read the streams of that node.
 ```bash
 # a recording of k4arecorder in place of the camera
 xblick-azure-kinect --playback take.mkv --loop
-# body tracking
-xblick-k4abt --model dnn_model_2_0_op11.onnx
-# coloured point clouds on cam/azurekinect/points, with Durchblick's point cloud node
+# body tracking; install/env.sh names the SDK's model, elsewhere add --model dnn_model_2_0_op11.onnx
+xblick-k4abt
+# coloured point clouds on cam/azurekinect/points, with Durchblick's point cloud node (CUDA builds)
 xblick-points --depth cam/azurekinect/depth --color cam/azurekinect/color
 # a viewer on another host
 xblick rerun cam/azurekinect/color cam/azurekinect/depth cam/azurekinect/ir \

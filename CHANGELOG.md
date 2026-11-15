@@ -2,6 +2,16 @@
 
 *The node's [overview](README.md). Versions before 0.3.0 are described in the git history only.*
 
+* **0.3.3** `tools/setup.sh` sets the node up from scratch on Ubuntu 24.04: it downloads the prerequisites at pinned
+  versions with sha256 checksums into Durchblick's cache directory (`~/.cache/xblick/azure-kinect`), builds and tests
+  the node in `build-setup/` and installs it in `install/` with `install/env.sh`. It uses no `sudo`. It prints the
+  `apt` command for missing Ubuntu packages and the commands for the udev rule. Options: `--cuda`, `--no-gpu`,
+  `--cuda-toolkit DIR`, `--body-tracking`. The README's install section uses it; docs/build.md lists every download
+  with its source and terms and keeps the manual CMake build. New CMake option `XBLICK_K4A_CUDNN_DIR`: cuDNN 9 for
+  body tracking through the RPATH, for CUDA toolkits without cuDNN. The `offline` test builds again without
+  `XBLICK_K4A_CUDA` (its `color_rect` check was inside the CUDA-only part). The depth engine needs no
+  `LD_LIBRARY_PATH` when the Sensor SDK keeps the layout of Microsoft's package.
+
 * **0.3.2** `xblick-k4abt` keeps its TensorRT engine cache in the node's cache directory of Durchblick 0.5.5,
   `~/.cache/xblick/k4abt` (`xblick::cache_dir("k4abt")`; `XDG_CACHE_HOME` moves it to `$XDG_CACHE_HOME/xblick/k4abt`,
   `XBLICK_HOME` to `$XBLICK_HOME/cache/k4abt`), no longer in `~/.cache/xblick-k4abt` or

@@ -11,13 +11,16 @@ tests): `AGENTS.md` of the core repository (github.com/xblick/xblick). Style of 
 ## Commands
 
 ```bash
-# Build on a local disk, never on a shared filesystem. <...> = install prefixes. Full option list: docs/build.md.
-cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="<xblick>;<zenoh>;<k4a>;<nlohmann_json>" \
+# Everything from scratch (prerequisites in xblick::cache_dir("azure-kinect"), build in build-setup/, ctest, install/
+# with install/env.sh). No sudo: it prints the apt command and stops. Options: --help. Details: docs/build.md.
+tools/setup.sh [--cuda | --no-gpu] [--cuda-toolkit DIR] [--body-tracking]
+# By hand. Build on a local disk, never on a shared filesystem. <...> = install prefixes. Options: docs/build.md.
+cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="<xblick>;<zenoh>;<k4a>/usr;<nlohmann_json>" \
   -DXBLICK_K4A_CUDA=ON -DCUDAToolkit_ROOT=<cuda-12.8> \
-  [-DXBLICK_K4A_BODY_TRACKING=ON -Dk4abt_DIR=... -DXBLICK_K4A_ONNXRUNTIME_DIR=... \
+  [-DXBLICK_K4A_BODY_TRACKING=ON -Dk4abt_DIR=... -DXBLICK_K4A_ONNXRUNTIME_DIR=... -DXBLICK_K4A_CUDNN_DIR=... \
    -DXBLICK_K4A_TENSORRT_DIR=... -DK4ABT_TEST_MODEL=<sdk>/usr/bin/dnn_model_2_0_op11.onnx]
 cmake --build build
-ctest --test-dir build --output-on-failure   # LD_LIBRARY_PATH: k4a + depth engine, zenoh, k4abt
+ctest --test-dir build --output-on-failure   # no LD_LIBRARY_PATH needed with the SDK laid out as Microsoft's package
 cmake --install build --prefix <xblick_k4a>   # the CMake package xblick_k4a (xblick_k4a_DIR)
 tools/check_references.sh                         # the reference check of the CI
 ```
@@ -40,8 +43,12 @@ Durations: not recorded. Give `ctest` a timeout.
   ONNX Runtime stand-in, RPATH, diagnostics). Keep that table current. Do not undo a decision without reading its
   reason.
 - Run-time libraries come from RPATH. Never put them on a workspace-wide `LD_LIBRARY_PATH`: that would shadow, for
-  example, PyTorch's cuDNN for every program of the workspace. Only exception: the depth engine, which `libk4a` opens
-  by name.
+  example, PyTorch's cuDNN for every program of the workspace. The depth engine, which `libk4a` opens
+  by name, comes through libk4a's own RUNPATH `$ORIGIN/libk4a1.4` (the layout of Microsoft's package); only a
+  depth engine elsewhere needs `LD_LIBRARY_PATH`. `install/env.sh` sets PATH only.
+- `tools/setup.sh` pins every download (file, URL, sha256 in `pins`). A new version needs its sha256 and the table
+  in docs/build.md. No sudo in it: what needs root it checks and prints. Microsoft's and NVIDIA's binaries: print the
+  terms' name and link when the download starts (no accept flag).
 - A capture or tracking failure ends the program.
 - The calibration record has version 2. Camera nodes and trackers of another version refuse each other.
 - Documentation: Markdown only in `README.md` and `docs/`, one purpose per page, history in commit messages.
@@ -75,7 +82,7 @@ Durations: not recorded. Give `ctest` a timeout.
 | `src/main_body_tracking.cpp`, `body_tracking.*` | `xblick-k4abt` |
 | `src/onnxruntime_compat.*` | the ONNX Runtime 1.10 stand-in |
 | `tests/`, `tests/data/k4a_test_calibration.json` | `offline`, `parameters`, `body_tracking` tests |
-| `tools/` | benchmark, `depth_to_color` check and mirror, `check_references.sh` |
+| `tools/` | `setup.sh`, benchmark, `depth_to_color` check and mirror, `check_references.sh` |
 | `docs/` | human documentation |
 
 ## Defaults
@@ -91,7 +98,7 @@ Durations: not recorded. Give `ctest` a timeout.
 - Tracker: `--processing tensorrt`, `--model` from `$K4A_BODY_TRACKING_DNN_MODEL_FILEPATH`, cache
   `xblick::cache_dir("k4abt")`: `~/.cache/xblick/k4abt`, `$XDG_CACHE_HOME/xblick/k4abt`, `$XBLICK_HOME/cache/k4abt`.
 - Zenoh: the PC's router at 127.0.0.1:7447, or `--connect`, `--listen`, `--zenoh-config`.
-- Standalone start: `zenohd`, then `xblick-azure-kinect [--cuda-device 0]` (or `--playback take.mkv --loop`),
+- Standalone start: `source install/env.sh`, `zenohd`, then `xblick-azure-kinect [--cuda-device 0]` (or `--playback take.mkv --loop`),
   `xblick-k4abt --model dnn_model_2_0_op11.onnx`, `xblick-points --depth <base>/depth --color <base>/color`.
   Look with `xblick rerun ... --spawn` and `xblick diagnostics cam`.
 - Tested mostly offline (recordings the SDK wrote, a rendered mannequin). Behaviour with a real device is largely

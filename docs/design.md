@@ -39,7 +39,7 @@ installed CMake package. The table lists the decisions that a simplification cou
 | Decision | Reason | Cost |
 | --- | --- | --- |
 | The depth engine gets its OpenGL context through EGL (`libxblick_k4a_egl.so`). | The SDK needs an X display for it, and the camera's host has none. | We maintain 15 Xlib and GLX functions of our own. See "Depth engine". |
-| Body tracking uses a current ONNX Runtime through `src/onnxruntime_compat.cpp`, a stand-in for the SDK's `libonnxruntime.so.1.10.0`. TensorRT is the default mode. | With the SDK's ONNX Runtime 1.10, GPUs of compute capability 10 and newer (Blackwell) return no bodies. TensorRT takes 7.0 ms per frame, and CUDA takes 16.4 ms. | The host needs ONNX Runtime 1.31.1, TensorRT 10.14.1 and CUDA 12.8. The Body Tracking SDK still brings CUDA 11.2, which only the SDK's own runtime would use. |
+| Body tracking uses a current ONNX Runtime through `src/onnxruntime_compat.cpp`, a stand-in for the SDK's `libonnxruntime.so.1.10.0`. TensorRT is the default mode. | With the SDK's ONNX Runtime 1.10, GPUs of compute capability 10 and newer (Blackwell) return no bodies. TensorRT takes 7.0 ms per frame, and CUDA takes 16.4 ms. | The host needs ONNX Runtime 1.31.1, TensorRT 10.14.1, cuDNN 9 and CUDA 12.8. The Body Tracking SDK still brings CUDA 11.2, which only the SDK's own runtime would use. |
 | The programs find libraries at run time through their RPATH. They do not use `LD_LIBRARY_PATH`. | See "Libraries at run time". | `CMakeLists.txt` contains linker options for it. |
 | Monitoring uses `<base>/diagnostics` with ROS's message. | Rerun and `xblick diagnostics` read the diagnostics. | A monitor of another framework has to read the topic or receive the report from the program that embeds the node. |
 | The IMU is one `sensor_msgs/Imu` per sample, only while a subscriber exists. | It is ROS's message. | A subscriber receives about 1600 small messages per second. |
@@ -61,9 +61,10 @@ it searches `RUNPATH` after `LD_LIBRARY_PATH`. Modern linkers write `RUNPATH` by
 | --- | --- |
 | The ONNX Runtime stand-in | Through `DT_RPATH`, which the option `-Wl,--disable-new-dtags` selects. The SDK's own `libonnxruntime.so.1.10.0` is usually on `LD_LIBRARY_PATH` and would win over a `RUNPATH`. |
 | ONNX Runtime 1.31.1 | Through the `RUNPATH` of the stand-in. |
-| CUDA 12.8 with cuDNN | Through the `DT_RPATH` of the executable. The directory is in it because the node links nvJPEG. |
+| CUDA 12.8 | Through the `DT_RPATH` of the executable. The directory is in it because the node links nvJPEG. |
+| cuDNN 9 | Through the `DT_RPATH` of the executable. `XBLICK_K4A_CUDNN_DIR` adds `<cuDNN>/lib` to it. Without that option, cuDNN has to be in the CUDA toolkit's library directory. |
 | TensorRT | Through the `DT_RPATH` of the executable. `XBLICK_K4A_TENSORRT_DIR` adds `<TensorRT>/lib` to it. |
-| The depth engine | From `LD_LIBRARY_PATH`. `libk4a` opens it by name. |
+| The depth engine | `libk4a` opens it by name. It finds it through its own `RUNPATH` `$ORIGIN/libk4a1.4`, where Microsoft's package puts it. A depth engine in another directory has to be on `LD_LIBRARY_PATH`. |
 
 ONNX Runtime's CUDA and TensorRT providers have no `RUNPATH` of their own. They find their libraries through the
 `DT_RPATH` of the executable. The exported CMake targets pass both directories on to the programs that link them.
@@ -78,7 +79,8 @@ We found these in the SDK and in our measurements.
 ### Depth engine
 
 The SDK computes depth from the raw IR image on the host GPU with OpenGL. The library is `libdepthengine.so.2.0`. It
-is closed source and must be on `LD_LIBRARY_PATH`. The SDK's transformation, which produces `depth_to_color`, runs
+is closed source. `libk4a` finds it in `libk4a1.4/` beside itself (see "Libraries at run time"). The SDK's
+transformation, which produces `depth_to_color`, runs
 there too.
 
 The depth engine gets its OpenGL 4.4 context through Xlib and GLX. With the SDK alone it therefore needs an X display.
