@@ -73,7 +73,8 @@ tools/setup.sh                    # add --body-tracking for xblick-k4abt
   `/usr/local/cuda` or at `--cuda-toolkit DIR`. Tested: 12.8; another version gives a warning and is not tested.
   `--no-gpu` builds without them.
 - `--body-tracking` needs the CUDA parts and downloads 11 GB. It needs a CUDA 12 toolkit: the pinned ONNX Runtime,
-  cuDNN and TensorRT are builds for CUDA 12 and load its libraries by name.
+  cuDNN and TensorRT are builds for CUDA 12 and load its libraries by name. With a CUDA 13 toolkit,
+  `--untested-cuda13` takes their builds for CUDA 13; body tracking was never tried with them.
 - A second call does only what changed. `tools/setup.sh --help` lists the options.
 - We tested the script on Ubuntu 24.04 with `--no-gpu`, and with the CUDA parts and `--body-tracking`, without a
   camera. [docs/build.md](docs/build.md#what-was-tested) lists what was not tested.

@@ -2,6 +2,10 @@
 
 *The node's [overview](README.md). Versions before 0.3.0 are described in the git history only.*
 
+* **0.3.5** `tools/setup.sh --body-tracking --untested-cuda13` on a CUDA 13 toolkit takes the builds of ONNX Runtime
+  1.31.1, cuDNN 9.15.0.58 and TensorRT 10.14.1.48 for CUDA 13, pinned with sha256. Body tracking was never tried with
+  them. Without the option, `--body-tracking` needs a CUDA 12 toolkit as before. Compatible with earlier clients:
+  nothing on the wire changed.
 * **0.3.4** `tools/setup.sh` accepts a CUDA toolkit of version 12 or newer for the node's CUDA parts (nvJPEG, NPP, CUDA
   rings). A version other than the tested 12.8 gives a warning; CUDA 13 is not tested. `--body-tracking` still needs
   CUDA 12, because the pinned ONNX Runtime, cuDNN and TensorRT are builds for it. The package check accepts multiarch

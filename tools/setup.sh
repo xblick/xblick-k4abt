@@ -21,7 +21,7 @@ set -euo pipefail
 
 usage() {
     cat <<'EOF'
-Usage: tools/setup.sh [--cuda | --no-gpu] [--cuda-toolkit DIR] [--body-tracking]
+Usage: tools/setup.sh [--cuda | --no-gpu] [--cuda-toolkit DIR] [--body-tracking] [--untested-cuda13]
 
 Installs the prerequisites into the cache directory of xblick (cache/azure-kinect below $XBLICK_HOME, else
 $XDG_CACHE_HOME/xblick/azure-kinect, else ~/.cache/xblick/azure-kinect), builds the node in build-setup/, runs its
@@ -33,6 +33,9 @@ tests and installs it in install/. Afterwards: source install/env.sh.
   --cuda-toolkit DIR  the CUDA toolkit, 12 or newer, with nvJPEG and NPP (default /usr/local/cuda)
   --body-tracking     also build xblick-k4abt (Body Tracking SDK 1.1.2, ONNX Runtime 1.31.1, cuDNN 9.15,
                       TensorRT 10.14; 11 GB of downloads); needs the CUDA parts
+  --untested-cuda13   with --body-tracking and a CUDA 13 toolkit: use the builds of ONNX Runtime, cuDNN and
+                      TensorRT for CUDA 13. Body tracking was never tried with them; without this option
+                      --body-tracking needs a CUDA 12 toolkit
   -h, --help          this text
 EOF
 }
@@ -45,12 +48,14 @@ die() {
 gpu=auto
 toolkit=/usr/local/cuda
 body_tracking=0
+untested_cuda13=0
 while (($#)); do
     case $1 in
         --cuda) [[ $gpu != off ]] || die "--cuda and --no-gpu exclude each other"; gpu=on ;;
         --no-gpu) [[ $gpu != on ]] || die "--cuda and --no-gpu exclude each other"; gpu=off ;;
         --cuda-toolkit) (($# > 1)) || die "--cuda-toolkit needs a directory"; toolkit=$2; shift ;;
         --body-tracking) body_tracking=1 ;;
+        --untested-cuda13) untested_cuda13=1 ;;
         -h | --help) usage; exit 0 ;;
         *) usage >&2; die "unknown option: $1" ;;
     esac
@@ -69,6 +74,7 @@ k4abt_version=1.1.2
 cuda_header_version=13.4.92
 ort_version=1.31.1
 cudnn_version=9.15.0.57
+cudnn13_version=9.15.0.58
 tensorrt_version=10.14.1.48
 
 # file name in downloads/ | URL | sha256
@@ -87,6 +93,10 @@ pins=(
     "onnxruntime-linux-x64-gpu_cuda12-$ort_version.tgz|https://github.com/microsoft/onnxruntime/releases/download/v$ort_version/onnxruntime-linux-x64-gpu_cuda12-$ort_version.tgz|57cd51f677eca19a269cdba31b0c16c15d73a8feea41f170aa8b750447ab1f70"
     "cudnn-linux-x86_64-${cudnn_version}_cuda12-archive.tar.xz|https://developer.download.nvidia.com/compute/cudnn/redist/cudnn/linux-x86_64/cudnn-linux-x86_64-${cudnn_version}_cuda12-archive.tar.xz|183cb46b7b6d5d7c70258ce674cf795611a59a32c220d25e4f772f9f07f77e29"
     "TensorRT-$tensorrt_version.Linux.x86_64-gnu.cuda-12.9.tar.gz|https://developer.download.nvidia.com/compute/machine-learning/tensorrt/10.14.1/tars/TensorRT-$tensorrt_version.Linux.x86_64-gnu.cuda-12.9.tar.gz|0daa7d5929c78edfbe86b474064d0f82d2064c475cc6be747c5101f1ccc37105"
+    # the builds for CUDA 13 (--untested-cuda13)
+    "onnxruntime-linux-x64-gpu_cuda13-$ort_version.tgz|https://github.com/microsoft/onnxruntime/releases/download/v$ort_version/onnxruntime-linux-x64-gpu_cuda13-$ort_version.tgz|b2146862e691f7e338f5aff9c7a9a5567c2ca57cf01442a1adb3a13bf62d9095"
+    "cudnn-linux-x86_64-${cudnn13_version}_cuda13-archive.tar.xz|https://developer.download.nvidia.com/compute/cudnn/redist/cudnn/linux-x86_64/cudnn-linux-x86_64-${cudnn13_version}_cuda13-archive.tar.xz|6ddfeaa00ba534c7917f15666d7fc1e8f05f822a7681eb9adbe4b86beaebe8bc"
+    "TensorRT-$tensorrt_version.Linux.x86_64-gnu.cuda-13.0.tar.gz|https://developer.download.nvidia.com/compute/machine-learning/tensorrt/10.14.1/tars/TensorRT-$tensorrt_version.Linux.x86_64-gnu.cuda-13.0.tar.gz|c74af67db57f1a0d7e66bb01ab93f1ecda5facac491ca76e680d832f1e035ce6"
 )
 
 # ------------------------------------------------------------------------------------------------- the system
@@ -104,6 +114,7 @@ if [[ $gpu == auto ]]; then
     fi
 fi
 ((!body_tracking)) || [[ $gpu == on ]] || die "--body-tracking needs the CUDA parts: leave out --no-gpu"
+((!untested_cuda13)) || ((body_tracking)) || die "--untested-cuda13 only has a meaning with --body-tracking"
 
 # the Ubuntu packages: the build tools, libjpeg, libpng, EGL; the depth engine needs libGL and libX11 at run time,
 # libk4a libudev, the Body Tracking SDK libgomp
@@ -134,12 +145,20 @@ if [[ $gpu == on ]]; then
             "sudo apt install cuda-toolkit-12-8, or --cuda-toolkit DIR, or --no-gpu"
     needed=(include/nvjpeg.h lib64/libnvjpeg.so lib64/libnppig.so)
     if [[ $body_tracking == 1 ]]; then
-        # the pinned ONNX Runtime, cuDNN and TensorRT are builds for CUDA 12 and load its libraries by name
-        ((toolkit_major == 12)) ||
-            die "the CUDA toolkit at $toolkit is $toolkit_version, but --body-tracking needs CUDA 12 (the pinned" \
-                "ONNX Runtime, cuDNN and TensorRT are built for it): --cuda-toolkit DIR of a CUDA 12 toolkit," \
-                "or setup without --body-tracking"
-        needed+=(lib64/libcublas.so.12)
+        # the pinned ONNX Runtime, cuDNN and TensorRT are builds for one CUDA major version and load its libraries
+        # by name: the set for CUDA 12 is the tested one, the set for CUDA 13 was never tried with body tracking
+        if ((toolkit_major == 13 && untested_cuda13)); then
+            echo "setup.sh: WARNING: body tracking with the CUDA 13 builds of ONNX Runtime, cuDNN and TensorRT" \
+                "was never tried (--untested-cuda13); going on" >&2
+        elif ((toolkit_major == 13)); then
+            die "the CUDA toolkit at $toolkit is $toolkit_version, and --body-tracking is tested with CUDA 12 only:" \
+                "--untested-cuda13 takes the builds for CUDA 13 (never tried), or --cuda-toolkit DIR of a CUDA 12" \
+                "toolkit, or setup without --body-tracking"
+        elif ((toolkit_major != 12)); then
+            die "the CUDA toolkit at $toolkit is $toolkit_version, but --body-tracking needs CUDA 12 or 13 (ONNX" \
+                "Runtime, cuDNN and TensorRT are pinned as builds for these): --cuda-toolkit DIR"
+        fi
+        needed+=("lib64/libcublas.so.$toolkit_major")
     fi
     for file in "${needed[@]}"; do
         [[ -e $toolkit/$file ]] || die "the CUDA toolkit at $toolkit has no $file (nvJPEG and NPP are needed)"
@@ -316,26 +335,35 @@ if ((body_tracking)); then
         dpkg-deb -x "$downloads/libk4abt1.1-dev_${k4abt_version}_amd64.deb" "$k4abt"
         mark_finished "$k4abt"
     fi
-    ort=$cache/onnxruntime-linux-x64-gpu_cuda12-$ort_version
+    # the set of builds for the toolkit's CUDA major version (12: tested; 13: --untested-cuda13)
+    if ((toolkit_major == 13)); then
+        cudnn_set_version=$cudnn13_version tensorrt_cuda=13.0 tensorrt_root=$cache/cuda13
+    else
+        cudnn_set_version=$cudnn_version tensorrt_cuda=12.9 tensorrt_root=$cache
+    fi
+    ort_name=onnxruntime-linux-x64-gpu_cuda$toolkit_major-$ort_version
+    cudnn_name=cudnn-linux-x86_64-${cudnn_set_version}_cuda$toolkit_major-archive
+    tensorrt_name=TensorRT-$tensorrt_version.Linux.x86_64-gnu.cuda-$tensorrt_cuda
+    ort=$cache/$ort_name
     if ! finished "$ort"; then
-        fetch "onnxruntime-linux-x64-gpu_cuda12-$ort_version.tgz"
+        fetch "$ort_name.tgz"
         echo "unpacking ONNX Runtime $ort_version"
-        tar -xzf "$downloads/onnxruntime-linux-x64-gpu_cuda12-$ort_version.tgz" -C "$cache"
+        tar -xzf "$downloads/$ort_name.tgz" -C "$cache"
         mark_finished "$ort"
     fi
-    cudnn=$cache/cudnn-linux-x86_64-${cudnn_version}_cuda12-archive
+    cudnn=$cache/$cudnn_name
     if ! finished "$cudnn"; then
-        fetch "cudnn-linux-x86_64-${cudnn_version}_cuda12-archive.tar.xz" "$notice_cudnn"
-        echo "unpacking cuDNN $cudnn_version"
-        tar -xJf "$downloads/cudnn-linux-x86_64-${cudnn_version}_cuda12-archive.tar.xz" -C "$cache" \
-            --exclude='*_static*.a'
+        fetch "$cudnn_name.tar.xz" "$notice_cudnn"
+        echo "unpacking cuDNN $cudnn_set_version"
+        tar -xJf "$downloads/$cudnn_name.tar.xz" -C "$cache" --exclude='*_static*.a'
         mark_finished "$cudnn"
     fi
-    tensorrt=$cache/TensorRT-$tensorrt_version
+    tensorrt=$tensorrt_root/TensorRT-$tensorrt_version
     if ! finished "$tensorrt"; then
-        fetch "TensorRT-$tensorrt_version.Linux.x86_64-gnu.cuda-12.9.tar.gz" "$notice_tensorrt"
+        fetch "$tensorrt_name.tar.gz" "$notice_tensorrt"
         echo "unpacking TensorRT $tensorrt_version (its libraries)"
-        tar -xzf "$downloads/TensorRT-$tensorrt_version.Linux.x86_64-gnu.cuda-12.9.tar.gz" -C "$cache" \
+        mkdir -p "$tensorrt_root"
+        tar -xzf "$downloads/$tensorrt_name.tar.gz" -C "$tensorrt_root" \
             --exclude='*.a' --exclude='*_win_*' "TensorRT-$tensorrt_version/lib" "TensorRT-$tensorrt_version/doc"
         mark_finished "$tensorrt"
     fi

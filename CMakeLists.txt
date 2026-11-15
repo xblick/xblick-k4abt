@@ -9,7 +9,7 @@
 # xblick_k4a (xblick_k4a::xblick_k4a, xblick_k4a::xblick_k4abt), for programs that build on the
 # node and the tracker.
 cmake_minimum_required(VERSION 3.22)
-project(xblick_azure_kinect VERSION 0.3.4 LANGUAGES CXX)
+project(xblick_azure_kinect VERSION 0.3.5 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
