@@ -111,7 +111,9 @@ packages=(cmake ninja-build g++ curl unzip xz-utils libjpeg-turbo8-dev libpng-de
 ((!body_tracking)) || packages+=(libgomp1)
 missing=()
 for package in "${packages[@]}"; do
-    [[ $(dpkg-query -W -f='${db:Status-Status}' "$package" 2> /dev/null) == installed ]] || missing+=("$package")
+    # one line per architecture: with multiarch (i386 next to amd64) a package is listed twice
+    dpkg-query -W -f='${Architecture} ${db:Status-Status}\n' "$package" 2> /dev/null |
+        grep -Eqx '(amd64|all) installed' || missing+=("$package")
 done
 ((${#missing[@]} == 0)) || die "missing system packages: sudo apt install ${missing[*]}"
 
