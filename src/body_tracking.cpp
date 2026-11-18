@@ -25,7 +25,6 @@
 #include "xblick/camera.hpp"
 #include "xblick/paths.hpp"
 #include "xblick/protocol.hpp"
-#include "node.hpp"
 
 // ONNX Runtime's entry point (onnxruntime_c_api.h), from the library libk4abt runs on: the SDK's own 1.10 or a
 // current one behind src/onnxruntime_compat.cpp. OrtApiBase is {GetApi, GetVersionString} in every version.
@@ -46,7 +45,53 @@ namespace xblick::k4a_node
 {
     namespace
     {
+        using k4a_record::CalibrationRecord;
+
         static_assert(kJointCount == K4ABT_JOINT_COUNT);
+
+        // The camera node's topics below its base (xblick-azure-kinect's node.hpp): the tracker reads depth and IR and
+        // asks the queryable for the calibration record.
+        constexpr const char* kDepth = "depth";
+        constexpr const char* kIr = "ir";
+        constexpr const char* kCalibration = "k4a_calibration";
+
+        // The calibration record of the node publishing below `base` (its <base>/k4a_calibration), as
+        // xblick-azure-kinect's query_calibration. Throws if no node or several answer within the timeout.
+        CalibrationRecord query_calibration(zenoh::Session& session, const std::string& base,
+                                            std::chrono::milliseconds timeout)
+        {
+            // asked again until an answer comes: right after a session connects, the node's queryable may not be
+            // known to it yet, and a query then ends at once without answers
+            const std::string key = check_name(base) + "/" + kCalibration;
+            const auto deadline = std::chrono::steady_clock::now() + timeout;
+            std::vector<std::string> records;
+            while (records.empty() and std::chrono::steady_clock::now() < deadline)
+            {
+                zenoh::Session::GetOptions options;
+                options.timeout_ms = 500;
+                auto replies =
+                    session.get(zenoh::KeyExpr(key), "", zenoh::channels::FifoChannel(16), std::move(options));
+                for (auto r = replies.recv(); std::holds_alternative<zenoh::Reply>(r); r = replies.recv())
+                {
+                    const auto& reply = std::get<zenoh::Reply>(r);
+                    if (reply.is_ok())
+                    {
+                        records.push_back(reply.get_ok().get_payload().as_string());
+                    }
+                }
+                if (records.empty())
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                }
+            }
+            if (records.size() != 1)
+            {
+                throw std::runtime_error(key + ": " + std::to_string(records.size()) +
+                                         " answers (one Azure Kinect node expected) within " +
+                                         std::to_string(timeout.count()) + " ms");
+            }
+            return CalibrationRecord::from_json(records[0]);
+        }
 
         k4abt_tracker_processing_mode_t processing_mode(const std::string& name)
         {
@@ -170,7 +215,7 @@ namespace xblick::k4a_node
     struct BodyTracking::Impl
     {
         BodyTrackingOptions o;
-        CalibrationRecord record;
+        k4a_record::CalibrationRecord record;
         k4a_calibration_t calibration{};
         k4abt::tracker tracker;
         zenoh::Session* session = nullptr;

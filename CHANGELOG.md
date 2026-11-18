@@ -1,16 +1,40 @@
 # Versions
 
-*The node's [overview](README.md). Versions before 0.3.0 are described in the git history only.*
+*The tracker's [overview](README.md). Up to 0.3.5 the tracker was part of
+[xblick-azure-kinect](https://github.com/xblick/xblick-azure-kinect); those entries are that repository's. Versions
+before 0.3.0 are described in the git history only.*
+
+* **0.4.0** The tracker has a repository of its own, split out of xblick-azure-kinect 0.3.5 with the history of its
+  files. The program `xblick-k4abt`, its topics, options and parameters, the calibration record (version 2) and the
+  TensorRT engine cache `~/.cache/xblick/k4abt` are unchanged. It works with camera nodes of xblick-azure-kinect 0.3
+  and 0.4. Compatible with earlier clients: nothing on the wire changed.
+
+  What changes for builds and the setup:
+
+  | What | xblick-azure-kinect 0.3.5 | xblick-k4abt 0.4.0 |
+  | --- | --- | --- |
+  | Repository | `github.com/xblick/xblick-azure-kinect`, `-DXBLICK_K4A_BODY_TRACKING=ON` | `github.com/xblick/xblick-k4abt`, always built; the option `XBLICK_K4A_BODY_TRACKING` is gone |
+  | CMake package and target | `xblick_k4a` 0.3 (with `xblick_k4a_BODY_TRACKING`), `xblick_k4a::xblick_k4abt` | `xblick_k4abt_lib` 0.4, `xblick_k4abt_lib::xblick_k4abt` |
+  | Installed headers | `include/xblick_k4a` | `include/xblick_k4abt`: `body_tracking.hpp`, `session.hpp` |
+  | CUDA toolkit | through the camera's CUDA parts (`XBLICK_K4A_CUDA`) | `CUDAToolkit_ROOT`, needed with `XBLICK_K4A_ONNXRUNTIME_DIR` |
+  | Setup | `tools/setup.sh --body-tracking [--untested-cuda13]` | `tools/setup.sh [--cuda-toolkit DIR]` |
+  | Prerequisites of the setup | `~/.cache/xblick/azure-kinect` | `~/.cache/xblick/k4abt`; the downloads of the old directory can be moved to its `downloads/` |
+  | Test program | `test_k4a_body_tracking`, with the camera node | `test_k4a_body_tracking`, with a stand-in for the camera node |
+
+  `tools/setup.sh` accepts a CUDA toolkit of version 12 or 13 and takes the pinned builds of ONNX Runtime 1.31.1,
+  cuDNN 9.15 and TensorRT 10.14.1.48 for its major version. The option `--untested-cuda13` is removed, without an
+  alias: the CUDA 13 builds are taken by themselves. Another major version stops the script. The script no longer
+  needs the Ubuntu packages `libegl-dev` and `libgl-dev`; `libgl1` and `libx11-6` stay, for the depth engine that
+  `libk4a` loads at its start. The other CMake options (`XBLICK_K4A_ONNXRUNTIME_DIR`, `XBLICK_K4A_CUDNN_DIR`,
+  `XBLICK_K4A_TENSORRT_DIR`, `K4ABT_TEST_MODEL`, `K4ABT_TEST_PROCESSING`) keep their names.
 
 * **0.3.5** `tools/setup.sh --body-tracking --untested-cuda13` on a CUDA 13 toolkit takes the builds of ONNX Runtime
-  1.31.1, cuDNN 9.15.0.58 and TensorRT 10.14.1.48 for CUDA 13, pinned with sha256. Body tracking was never tried with
-  them. Without the option, `--body-tracking` needs a CUDA 12 toolkit as before. Compatible with earlier clients:
-  nothing on the wire changed.
+  1.31.1, cuDNN 9.15.0.58 and TensorRT 10.14.1.48 for CUDA 13, pinned with sha256. Without the option,
+  `--body-tracking` needs a CUDA 12 toolkit. Compatible with earlier clients: nothing on the wire changed.
 * **0.3.4** `tools/setup.sh` accepts a CUDA toolkit of version 12 or newer for the node's CUDA parts (nvJPEG, NPP, CUDA
-  rings). A version other than the tested 12.8 gives a warning; CUDA 13 is not tested. `--body-tracking` still needs
-  CUDA 12, because the pinned ONNX Runtime, cuDNN and TensorRT are builds for it. The package check accepts multiarch
-  installs. Compatible with earlier clients: nothing on the wire changed.
-* **0.3.3** `tools/setup.sh` sets the node up from scratch on Ubuntu 24.04: it downloads the prerequisites at pinned
+  rings). `--body-tracking` still needs CUDA 12, because the pinned ONNX Runtime, cuDNN and TensorRT are builds for
+  it. The package check accepts multiarch installs. Compatible with earlier clients: nothing on the wire changed.
+* **0.3.3** `tools/setup.sh` sets the node up from scratch: it downloads the prerequisites at pinned
   versions with sha256 checksums into Durchblick's cache directory (`~/.cache/xblick/azure-kinect`), builds and tests
   the node in `build-setup/` and installs it in `install/` with `install/env.sh`. It uses no `sudo`. It prints the
   `apt` command for missing Ubuntu packages and the commands for the udev rule. Options: `--cuda`, `--no-gpu`,

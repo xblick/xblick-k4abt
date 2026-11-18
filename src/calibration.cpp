@@ -6,7 +6,7 @@
 
 #include <nlohmann/json.hpp>
 
-namespace xblick::k4a_node
+namespace xblick::k4a_record
 {
     namespace
     {
@@ -69,50 +69,6 @@ namespace xblick::k4a_node
     k4a_color_resolution_t color_resolution_from_name(const std::string& name)
     {
         return value_of(kColorResolutions, name, "colour resolution");
-    }
-
-    k4a_fps_t fps_from_value(int fps)
-    {
-        switch (fps)
-        {
-            case 5: return K4A_FRAMES_PER_SECOND_5;
-            case 15: return K4A_FRAMES_PER_SECOND_15;
-            case 30: return K4A_FRAMES_PER_SECOND_30;
-        }
-        throw std::invalid_argument("frame rate " + std::to_string(fps) + ": the Azure Kinect runs at 5, 15 or 30");
-    }
-
-    int fps_value(k4a_fps_t fps)
-    {
-        switch (fps)
-        {
-            case K4A_FRAMES_PER_SECOND_5: return 5;
-            case K4A_FRAMES_PER_SECOND_15: return 15;
-            case K4A_FRAMES_PER_SECOND_30: return 30;
-        }
-        throw std::invalid_argument("unknown k4a_fps_t " + std::to_string(int(fps)));
-    }
-
-    xblick::CameraInfo camera_info(const k4a_calibration_camera_t& camera, const std::string& frame_id)
-    {
-        if (camera.intrinsics.type != K4A_CALIBRATION_LENS_DISTORTION_MODEL_BROWN_CONRADY)
-        {
-            throw std::invalid_argument(
-                "lens model " + std::to_string(int(camera.intrinsics.type)) +
-                ": only Brown-Conrady (retail devices) has a ROS distortion model (rational_polynomial); Rational 6KT "
-                "(early internal devices) differs in its tangential terms");
-        }
-        const auto& p = camera.intrinsics.parameters.param;
-        if (p.codx != 0.0f or p.cody != 0.0f)
-        {
-            throw std::invalid_argument("the distortion is centred off the principal point (codx, cody): no ROS model");
-        }
-        xblick::CameraInfo info = xblick::CameraInfo::pinhole(
-            static_cast<std::uint32_t>(camera.resolution_width), static_cast<std::uint32_t>(camera.resolution_height),
-            p.fx, p.fy, p.cx, p.cy, frame_id);
-        info.distortion_model = "rational_polynomial";
-        info.d = {p.k1, p.k2, p.p1, p.p2, p.k3, p.k4, p.k5, p.k6};
-        return info;
     }
 
     namespace
@@ -256,49 +212,4 @@ namespace xblick::k4a_node
         }
         return calibration;
     }
-
-    xblick::CameraInfo CalibrationRecord::color_info() const
-    {
-        if (color_file)
-        {
-            xblick::CameraInfo info = *color_file;
-            info.header.frame_id = color_frame_id;
-            return info;
-        }
-        return camera_info(calibration().color_camera_calibration, color_frame_id);
-    }
-
-    xblick::CameraInfo CalibrationRecord::depth_info() const
-    {
-        if (depth_file)
-        {
-            xblick::CameraInfo info = *depth_file;
-            info.header.frame_id = depth_frame_id;
-            return info;
-        }
-        return camera_info(calibration().depth_camera_calibration, depth_frame_id);
-    }
-
-    CalibrationRecord with_calibration_files(CalibrationRecord record, const std::string& color_path,
-                                             const std::string& depth_path)
-    {
-        if (not color_path.empty())
-        {
-            if (record.color_resolution == K4A_COLOR_RESOLUTION_OFF)
-            {
-                throw std::invalid_argument("a colour calibration file, but the colour camera is off");
-            }
-            record.color_file = xblick::CameraInfo::read_file(color_path);
-        }
-        if (not depth_path.empty())
-        {
-            if (record.depth_mode == K4A_DEPTH_MODE_OFF)
-            {
-                throw std::invalid_argument("a depth calibration file, but the depth camera is off");
-            }
-            record.depth_file = xblick::CameraInfo::read_file(depth_path);
-        }
-        record.calibration();  // the files fit their cameras, or this throws here
-        return record;
-    }
-}  // namespace xblick::k4a_node
+}  // namespace xblick::k4a_record

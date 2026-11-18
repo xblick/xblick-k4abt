@@ -1,4 +1,4 @@
-xblick-azure-kinect
+xblick-k4abt
 Copyright 2026 David Schneider
 
 This product is licensed under the Apache License, Version 2.0 (see LICENSE).
@@ -37,10 +37,16 @@ MIT licence of that repository:
 Third-party software that this repository does not contain
 ----------------------------------------------------------
 
-The build links Microsoft's Azure Kinect Sensor SDK (libk4a, libk4arecord) and,
-for xblick-k4abt, the Azure Kinect Body Tracking SDK. The Sensor SDK's source
-code is under the MIT licence quoted above. At run time libk4a
-loads the depth engine (libdepthengine). The depth engine and the Body
-Tracking SDK are proprietary Microsoft binaries under the Microsoft Software
-License Terms that come with them. You install them separately; this
-repository contains no part of them.
+The build links Microsoft's Azure Kinect Body Tracking SDK (libk4abt) and
+Azure Kinect Sensor SDK (libk4a). The Sensor SDK's source code is under the MIT
+licence quoted above. At run time libk4a loads the depth engine
+(libdepthengine). The depth engine and the Body Tracking SDK are proprietary
+Microsoft binaries under the Microsoft Software License Terms that come with
+them.
+
+The tracker runs on Microsoft's ONNX Runtime (MIT licence) and, on the GPU, on
+NVIDIA's CUDA libraries, cuDNN and TensorRT, which are under NVIDIA's licence
+agreements (CUDA Toolkit End User License Agreement, Software License Agreement
+for cuDNN, TensorRT Software License Agreement).
+
+You install all of them separately; this repository contains no part of them.

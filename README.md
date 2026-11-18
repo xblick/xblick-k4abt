@@ -1,182 +1,134 @@
-# xblick-azure-kinect
+# xblick-k4abt
 
 [![xblick core](https://img.shields.io/pypi/v/xblick?label=xblick%20core&color=blue)](https://github.com/xblick/xblick)
-[![checks](https://github.com/xblick/xblick-azure-kinect/actions/workflows/checks.yml/badge.svg)](https://github.com/xblick/xblick-azure-kinect/actions/workflows/checks.yml)
+[![checks](https://github.com/xblick/xblick-k4abt/actions/workflows/checks.yml/badge.svg)](https://github.com/xblick/xblick-k4abt/actions/workflows/checks.yml)
 [![licence](https://img.shields.io/badge/licence-Apache--2.0-blue)](LICENSE)
 [![platform](https://img.shields.io/badge/platform-Linux%20x86__64-lightgrey)](README.md#requirements)
 
-`xblick-azure-kinect` publishes the colour, depth, IR and IMU data of an Azure Kinect as
-[Durchblick](https://github.com/xblick/xblick) streams, at up to 30 captures per second.
-`xblick-k4abt` is a second program that reads those streams and publishes the bodies that the Azure Kinect Body
-Tracking SDK finds.
+`xblick-k4abt` reads the depth and IR streams of an
+[xblick-azure-kinect](https://github.com/xblick/xblick-azure-kinect) node and publishes the bodies that the Azure
+Kinect Body Tracking SDK finds in them, as [Durchblick](https://github.com/xblick/xblick) samples.
 
-The node produces each representation of a stream only while a subscriber asks for it. It needs no X server, so it
-runs on a headless camera PC.
+The tracker is a process of its own. It runs on the camera's PC, where it reads the frames from shared memory, or on
+any other PC with a GPU, where it receives them through the Zenoh routers. It opens no device, so the camera node and
+any number of trackers can run at once.
 
 ## What it publishes
 
-The node publishes below one base name. The default base is `cam/azurekinect`.
+The tracker uses the base name of the camera node. The default base is `cam/azurekinect`.
 
 | Topic | Type | Content |
 | --- | --- | --- |
-| `<base>/color` | image, `rgb8` | The colour camera. JPEG subscribers get the camera's own JPEG bytes. |
-| `<base>/color_rect` | image, `rgb8` | The colour image without lens distortion. |
-| `<base>/depth` | image, `16UC1`, mm | The depth camera in its own geometry (640 x 576 in NFOV unbinned). |
-| `<base>/ir` | image, `mono16` | The IR image of the depth camera, with the stamp of the depth frame. |
-| `<base>/depth_to_color` | image, `16UC1`, mm | The depth as the colour camera sees it. |
-| `<base>/depth_to_color_rect` | image, `16UC1`, mm | The depth as the camera of `color_rect` sees it. |
-| `<base>/imu` | `sensor_msgs/Imu` | One message per IMU sample, about 1600 per second. |
-| `<base>/tf_static` | `tf2_msgs/TFMessage` | The poses of the colour camera and the IMU in the depth camera's frame. |
-| `<base>/k4a_calibration` | JSON, queryable | The calibration record of the device. |
-| `<base>/diagnostics` | `diagnostic_msgs/DiagnosticArray` | Rates, drops, restarts, temperature and settings, about once a second. |
-| `<base>/bodies` | JSON | The tracked bodies, published by `xblick-k4abt`. |
+| `<base>/bodies` | JSON | The tracked bodies of one depth frame: the SDK's 32 joints, positions in mm in the depth camera's frame. |
+| `<base>/diagnostics` | `diagnostic_msgs/DiagnosticArray` | The status `body_tracking`, beside the camera's: rates, latency, settings, about once a second. |
 
-Every image stream carries its `CameraInfo`. Durchblick's point cloud node computes coloured point clouds from these
-streams on `<base>/points`. [docs/streams.md](docs/streams.md) describes every stream, the calibration files and the
-point clouds.
+It reads `<base>/depth`, `<base>/ir` and the calibration record on the queryable `<base>/k4a_calibration`.
+[docs/design.md](docs/design.md#results) describes the JSON of a result and its stamp.
 
 ## Requirements
 
 | Need | For |
 | --- | --- |
-| Linux on x86-64. The setup script is tested on Ubuntu 24.04. | everything |
+| Linux on x86-64 | everything |
 | CMake 3.24 or newer, Ninja, a C++20 compiler | the build |
 | Durchblick 0.5.5 or a later 0.5, C++ package | everything |
 | zenoh-c and zenoh-cpp 1.10 | everything |
-| Azure Kinect Sensor SDK 1.4 with `k4arecord` and the depth engine | everything |
+| Azure Kinect Sensor SDK 1.4 (`libk4a`) | the SDK's types and calibration functions |
+| Azure Kinect Body Tracking SDK 1.1 with its model `dnn_model_2_0_op11.onnx` | everything |
 | nlohmann_json, libjpeg or libjpeg-turbo, libpng | everything |
-| NVIDIA GPU and driver with EGL, GLVND's `libGL` and `libX11` | the depth engine without an X server |
-| CUDA toolkit 12 or newer with nvJPEG and NPP (tested: 12.8; body tracking needs 12) | optional: colour decoding on the GPU, CUDA rings, `xblick-points` |
-| Azure Kinect Body Tracking SDK 1.1 | optional: `xblick-k4abt` |
-| ONNX Runtime for CUDA 12 (tested: 1.31.1) and cuDNN 9 (tested: 9.15) | body tracking |
-| TensorRT 10 (tested: 10.14.1) | body tracking in TensorRT mode, which is the default |
+| NVIDIA GPU and driver | GPU processing, the default |
+| CUDA toolkit 12 or 13 | ONNX Runtime's CUDA libraries |
+| ONNX Runtime 1.31 and cuDNN 9, builds for the toolkit's CUDA version | the tracker's network |
+| TensorRT 10, a build for the toolkit's CUDA version | TensorRT mode, which is the default |
 
-Every program connects to the Zenoh router of its PC (`zenohd` on port 7447). Durchblick's
-[sessions page](https://github.com/xblick/xblick/blob/main/docs/concepts/sessions.md) explains
-the routers.
+A running `xblick-azure-kinect` 0.3 or newer provides the streams. Every program connects to the Zenoh router of its
+PC (`zenohd` on port 7447). Durchblick's
+[sessions page](https://github.com/xblick/xblick/blob/main/docs/concepts/sessions.md) explains the routers.
 
 ## Install
 
-`tools/setup.sh` installs the prerequisites, builds the programs, runs the tests and installs the programs in
-`install/`. It does not use `sudo`.
+`tools/setup.sh` installs the prerequisites, builds the tracker, runs its test and installs the tracker in `install/`.
+It does not use `sudo`.
 
 ```bash
-git clone https://github.com/xblick/xblick-azure-kinect.git
-cd xblick-azure-kinect
-tools/setup.sh                    # add --body-tracking for xblick-k4abt
+git clone https://github.com/xblick/xblick-k4abt.git
+cd xblick-k4abt
+tools/setup.sh
 ```
 
 - If Ubuntu packages are missing, the script stops and prints the `sudo apt install` command for them.
-- If the udev rule for the camera is missing, the script prints the commands that install it and goes on. Without
-  the rule, only root can open the camera.
-- The script builds the CUDA parts when `nvidia-smi` lists a GPU. They need a CUDA toolkit, 12 or newer, at
-  `/usr/local/cuda` or at `--cuda-toolkit DIR`. Tested: 12.8; another version gives a warning and is not tested.
-  `--no-gpu` builds without them.
-- `--body-tracking` needs the CUDA parts and downloads 11 GB. It needs a CUDA 12 toolkit: the pinned ONNX Runtime,
-  cuDNN and TensorRT are builds for CUDA 12 and load its libraries by name. With a CUDA 13 toolkit,
-  `--untested-cuda13` takes their builds for CUDA 13; body tracking was never tried with them.
+- It needs a CUDA toolkit, 12 or 13, at `/usr/local/cuda` or at `--cuda-toolkit DIR`. It takes the builds of ONNX
+  Runtime, cuDNN and TensorRT for the toolkit's major version. Another major version stops the script, because no
+  builds are pinned for it.
+- It downloads about 11 GB with the CUDA 12 builds. Its test runs the tracker with TensorRT on the GPU.
 - A second call does only what changed. `tools/setup.sh --help` lists the options.
-- We tested the script on Ubuntu 24.04 with `--no-gpu`, and with the CUDA parts and `--body-tracking`, without a
-  camera. [docs/build.md](docs/build.md#what-was-tested) lists what was not tested.
 
-The script keeps the prerequisites in Durchblick's cache directory, by default `~/.cache/xblick/azure-kinect`.
-Every download has a pinned version and a sha256 checksum. Microsoft's Sensor SDK and Body Tracking SDK come from
+The script keeps the prerequisites in Durchblick's cache directory, by default `~/.cache/xblick/k4abt`. Every
+download has a pinned version and a sha256 checksum. Microsoft's Sensor SDK and Body Tracking SDK come from
 Microsoft's package repository, and NVIDIA's cuDNN and TensorRT from NVIDIA's download server. These binaries are
 under their makers' licence terms. The script prints the name of the terms and their link when it starts such a
 download.
 [docs/build.md](docs/build.md) lists every download with its source and terms, the manual build with CMake and what
-each test checks.
+the test checks.
 
 ## Run
 
-In each new shell, put the programs on `PATH` first. Start one Zenoh router per PC, unless one runs already.
+In each new shell, put the programs on `PATH` first. Start one Zenoh router per PC, unless one runs already. Start
+the camera node of [xblick-azure-kinect](https://github.com/xblick/xblick-azure-kinect), then the tracker. It prints
+`ready` when it tracks.
 
 ```bash
 source install/env.sh
 zenohd --no-multicast-scouting -l tcp/0.0.0.0:7447 &
-```
-
-Start the camera node. It prints `ready` when the streams are up.
-
-```bash
-xblick-azure-kinect
-```
-
-The other programs read the streams of that node.
-
-```bash
-# a recording of k4arecorder in place of the camera
-xblick-azure-kinect --playback take.mkv --loop
-# body tracking; install/env.sh names the SDK's model, elsewhere add --model dnn_model_2_0_op11.onnx
+# install/env.sh names the SDK's model; elsewhere add --model dnn_model_2_0_op11.onnx
 xblick-k4abt
-# coloured point clouds on cam/azurekinect/points, with Durchblick's point cloud node (CUDA builds)
-xblick-points --depth cam/azurekinect/depth --color cam/azurekinect/color
 # a viewer on another host
-xblick rerun cam/azurekinect/color cam/azurekinect/depth cam/azurekinect/ir \
-  cam/azurekinect/depth_to_color --points cam/azurekinect/points --spawn --connect <camera host>
+xblick rerun cam/azurekinect/depth --bodies cam/azurekinect/bodies --spawn --connect <camera host>
 ```
 
 Most users change these options:
 
 | Option | Default | Effect |
 | --- | --- | --- |
-| `--base NAME` | `cam/azurekinect` | The base name of all topics. |
-| `--cuda-device N\|none` | `0` in CUDA builds | The GPU that decodes the colour image and holds the CUDA rings. |
-| `--color-resolution MODE` | `720P` | The colour resolution. |
-| `--depth-mode MODE` | `NFOV_UNBINNED` | The depth mode. |
-| `--params-file FILE`, `--param NAME:=VALUE` | none | Start values of the parameters. |
-| `--color-calibration FILE`, `--depth-calibration FILE` | none | Calibration files that replace the device's intrinsics. |
+| `--base NAME` | `cam/azurekinect` | The base name of the camera node. |
+| `--processing tensorrt\|cuda\|cpu` | `tensorrt` | The processing mode of the SDK. |
+| `--gpu-device N` | `0` | The GPU. |
+| `--mask-min-x PX`, `--mask-max-x PX`, `--mask-max-z MM` | off | The region in which the tracker looks for bodies. |
+| `--max-rate HZ` | `0`, every frame | Track at most this many frames per second. |
 
-`--help` lists every option of a program, and a program stops at an unknown option. Every option is also a
-parameter: of the node `<base>` for the camera, read-only, and of `<base>/k4abt` for the body tracker, where the masks
-and `max_rate` change while it runs. Durchblick's terminal interface (`xblick`, tab Parameters) shows them, and
-`--param NAME:=VALUE` or `--params-file FILE` set them at the start.
-[docs/options.md](docs/options.md) lists every option. [docs/parameters.md](docs/parameters.md) lists the camera
-settings that you can change while the node runs, such as exposure and white balance.
+`--help` lists every option, and the program stops at an unknown option. Every option is also a parameter of the
+node `<base>/k4abt`, where the masks and `max_rate` change while it runs. Durchblick's terminal interface (`xblick`,
+tab Parameters) shows them, and `--param NAME:=VALUE` or `--params-file FILE` set them at the start.
+[docs/options.md](docs/options.md) lists every option.
 
 ## Why it is fast
 
-At 1080P, decoding a colour frame on the CPU takes 4.39 ms. This node spends 0.006 ms per frame for a JPEG
-subscriber and 1.20 ms for a subscriber that reads pixels on the GPU.
-
 | Change | Effect |
 | --- | --- |
-| The node passes the camera's MJPEG bytes on unchanged. | A JPEG subscriber costs no decoding. |
-| nvJPEG decodes the colour image into GPU memory. | 1080P pixels cost 1.20 ms, against 4.39 ms on the CPU. |
-| The node computes `depth_to_color` on the CPU. | The camera keeps 30 captures per second on a GPU that other programs use. |
-| Four threads publish the streams in parallel. | A slow upload of one stream does not delay the next capture. |
-| Body tracking uses TensorRT. | The SDK needs 7.0 ms per frame, against 16.4 ms with CUDA. |
+| The tracker runs on a current ONNX Runtime with TensorRT. | The SDK needs 7.0 ms per frame, against 16.4 ms with CUDA. |
+| TensorRT keeps its engine in a cache. | The tracker starts in 1.6 s instead of 10 s. |
+| A separate thread takes the results. | A result goes out 9 to 12 ms after the capture. |
 
 [docs/performance.md](docs/performance.md) has every measurement with its setup.
 
 ## Limits
 
-- We tested the programs offline, with recordings that the SDK wrote and with a rendered mannequin. Most behaviour
-  with a real device is unverified.
-- Nobody has measured the fixed delay between the exposure and the arrival of an image. Stamps are late by that delay.
-- The calibration files replace the intrinsics only. The extrinsics stay the factory values.
-- One program can open a device. No other driver may open the same camera.
-
-[docs/hardware-checks.md](docs/hardware-checks.md) is the checklist for a session with the camera attached.
+- The SDK's own ONNX Runtime 1.10 finds no bodies on GPUs of compute capability 10 and newer, such as Blackwell. A
+  build without `XBLICK_K4A_ONNXRUNTIME_DIR` therefore refuses these GPUs. `tools/setup.sh` always builds with a
+  current ONNX Runtime.
+- The calibration record has version 2. The tracker refuses camera nodes with another version.
 
 ## Documentation
 
 | Page | Content |
 | --- | --- |
-| [docs/streams.md](docs/streams.md) | Every stream in detail, calibration files, rectified colour, point clouds, viewing. |
-| [docs/options.md](docs/options.md) | Every command-line option of the three programs. |
-| [docs/parameters.md](docs/parameters.md) | The camera's parameters, the parameter services, the client, the diagnostics. |
-| [docs/timestamps.md](docs/timestamps.md) | How the node computes the stamp of a frame. |
-| [docs/performance.md](docs/performance.md) | Cost per frame and per capture, body tracking times. |
-| [docs/design.md](docs/design.md) | How the node works inside, the decisions and the special cases of the Azure Kinect. |
-| [docs/build.md](docs/build.md) | Dependencies, CMake options, tests. |
-| [docs/hardware-checks.md](docs/hardware-checks.md) | The checks that still need a camera. |
+| [docs/options.md](docs/options.md) | Every command-line option and parameter. |
+| [docs/performance.md](docs/performance.md) | Body tracking times. |
+| [docs/design.md](docs/design.md) | How the tracker works inside, the decisions and the special cases of the Body Tracking SDK. |
+| [docs/build.md](docs/build.md) | Dependencies, the setup script, CMake options, the test. |
 
-Durchblick's concept pages explain the terms that these pages use:
-[streams and topics](https://github.com/xblick/xblick/blob/main/docs/concepts/streams-and-topics.md),
-[transports](https://github.com/xblick/xblick/blob/main/docs/concepts/transports.md),
-[rings](https://github.com/xblick/xblick/blob/main/docs/concepts/rings.md) and
-[timestamps](https://github.com/xblick/xblick/blob/main/docs/concepts/timestamps.md).
+The camera node's documentation describes the streams that the tracker reads:
+[xblick-azure-kinect](https://github.com/xblick/xblick-azure-kinect).
 
 ## Licence and credits
 

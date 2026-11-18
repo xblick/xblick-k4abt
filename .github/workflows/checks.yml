@@ -1,5 +1,5 @@
-# Checks that need neither the Azure Kinect SDKs nor a GPU. Building the programs and their tests needs Durchblick's
-# C++ package (built with the CUDA toolkit) and the Azure Kinect Sensor SDK: see docs/build.md.
+# Checks that need neither the Azure Kinect SDKs nor a GPU. Building the tracker and its test needs Durchblick's
+# C++ package, the Sensor SDK, the Body Tracking SDK, ONNX Runtime and a CUDA toolkit: see docs/build.md.
 name: checks
 
 on:

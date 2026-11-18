@@ -1,6 +1,8 @@
-// Body tracking decoupled from the camera, without a camera: the node publishes captures of a rendered mannequin
-// (capsules and a sphere, A-pose, 2.8 m in front of a wall, on a floor), the tracker in this process takes depth and IR
-// over Durchblick and the calibration from the node's record, and its results arrive on <base>/bodies. Tested: the
+// Body tracking decoupled from the camera, without a camera: a stand-in for xblick-azure-kinect publishes depth and IR
+// of a rendered mannequin (capsules and a sphere, A-pose, 2.8 m in front of a wall, on a floor) as the camera node does
+// (<base>/depth 16UC1, <base>/ir mono16, one stamp per exposure, the calibration record on the queryable
+// <base>/k4a_calibration), the tracker in this process takes depth and IR over Durchblick and the calibration from
+// that record, and its results arrive on <base>/bodies. Tested: the
 // path (calibration record -> tracker, depth + IR paired by stamp -> capture -> tracker -> result with the frames'
 // stamp) and that the tracker finds the mannequin where the SDK's own processing finds it. A tracker that fails
 // silently (the SDK's CUDA 11 on a GPU it has no kernels for) delivers frames without bodies and fails here.
@@ -30,14 +32,17 @@
 
 #include <nlohmann/json.hpp>
 
+#include <k4a/k4a.h>
+
 #include "body_tracking.hpp"
+#include "calibration.hpp"
 #include "xblick/camera.hpp"
-#include "node.hpp"
 
 namespace
 {
     using namespace xblick;
     using namespace xblick::k4a_node;
+    using xblick::k4a_record::CalibrationRecord;
     using namespace std::chrono_literals;
 
     std::string brown_conrady_calibration()
@@ -152,23 +157,39 @@ namespace
         }
     }
 
-    k4a::capture capture(const std::vector<std::uint16_t>& depth_mm, const std::vector<std::uint16_t>& ir_values,
-                         std::chrono::microseconds device, std::chrono::nanoseconds system)
+    // The camera node's side of what the tracker reads (xblick-azure-kinect's node.cpp): depth and IR of one exposure
+    // with one stamp, depth with the RVL codec, and the calibration record on <base>/k4a_calibration.
+    class FakeCamera
     {
-        k4a::capture capture = k4a::capture::create();
-        k4a::image depth = k4a::image::create(K4A_IMAGE_FORMAT_DEPTH16, 640, 576, 640 * 2);
-        k4a::image ir = k4a::image::create(K4A_IMAGE_FORMAT_IR16, 640, 576, 640 * 2);
-        std::copy(depth_mm.begin(), depth_mm.end(), reinterpret_cast<std::uint16_t*>(depth.get_buffer()));
-        std::copy(ir_values.begin(), ir_values.end(), reinterpret_cast<std::uint16_t*>(ir.get_buffer()));
-        for (k4a::image* image : {&depth, &ir})
+    public:
+        FakeCamera(zenoh::Session& session, const std::string& base, const CalibrationRecord& record)
+            : depth_(session, base + "/depth", options("16UC1", record)),
+              ir_(session, base + "/ir", options("mono16", record)),
+              calibration_(session.declare_queryable(
+                  zenoh::KeyExpr(base + "/k4a_calibration"),
+                  [key = base + "/k4a_calibration", answer = record.to_json()](const zenoh::Query& query) {
+                      query.reply(zenoh::KeyExpr(key), answer);
+                  },
+                  zenoh::closures::none))
         {
-            image->set_timestamp(device);
-            k4a_image_set_system_timestamp_nsec(image->handle(), static_cast<std::uint64_t>(system.count()));
         }
-        capture.set_depth_image(depth);
-        capture.set_ir_image(ir);
-        return capture;
-    }
+
+        void publish(const std::vector<std::uint16_t>& depth, const std::vector<std::uint16_t>& ir,
+                     std::int64_t stamp_ns)
+        {
+            depth_.publish(HostImage{depth.data(), 576, 640, 0}, stamp_ns);
+            ir_.publish(HostImage{ir.data(), 576, 640, 0}, stamp_ns);
+        }
+
+    private:
+        static PublisherOptions options(const char* encoding, const CalibrationRecord& record)
+        {
+            return {.encoding = encoding, .frame_id = record.depth_frame_id, .source = "test", .codec = kRvl};
+        }
+
+        CameraPublisher depth_, ir_;
+        zenoh::Queryable<void> calibration_;
+    };
 
     // Where the SDK's own processing (its ONNX Runtime 1.10 on the CPU, dnn_model_2_0_op11) puts the mannequin's joints,
     // in mm (2026-10-27). ONNX Runtime 1.31 on the CPU and with CUDA without TF32 gave the same to 1 mm; with TF32 the
@@ -190,18 +211,18 @@ namespace
                 .depth_frame_id = "AzureKinectDepthCamera", .color_frame_id = "AzureKinectCamera"};
     }
 
-    // the camera at 30 fps until `done`; `sent` gets each capture's stamp
-    void publish(Node& node, const std::vector<std::uint16_t>& depth, const std::vector<std::uint16_t>& ir,
+    // the camera at 30 fps until `done`; `sent` gets each frame's stamp. The stamp is the wall-clock time of the
+    // publish, so that the result's latency is real.
+    void publish(FakeCamera& camera, const std::vector<std::uint16_t>& depth, const std::vector<std::uint16_t>& ir,
                  const std::atomic<bool>& done, const std::function<void(std::int64_t)>& sent)
     {
-        for (int seq = 0; not done; ++seq)
+        while (not done)
         {
-            const auto device = std::chrono::microseconds(2000000 + seq * 33333);
-            // arrival on the host's monotonic clock, as the SDK stamps it: the result's latency is then real
-            const auto arrival =
-                std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch());
-            node.publish(capture(depth, ir, device, arrival), true);
-            sent(node.clock().to_wall_ns(device));
+            const std::int64_t stamp = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                                           std::chrono::system_clock::now().time_since_epoch())
+                                           .count();
+            camera.publish(depth, ir, stamp);
+            sent(stamp);
             std::this_thread::sleep_for(33ms);
         }
     }
@@ -214,11 +235,11 @@ namespace
         std::signal(SIGTERM, [](int) { stop = true; });
         zenoh::Session session = open_session({.listen = {endpoint}});
         const CalibrationRecord record = test_record();
-        Node node(session, NodeOptions{.base = base, .source = "test", .depth_to_color = false}, record);
+        FakeCamera camera(session, base, record);
         std::vector<std::uint16_t> depth, ir;
         render(record.calibration(), depth, ir);
         std::fprintf(stderr, "publishing the mannequin on %s/{depth,ir} at %s\n", base.c_str(), endpoint.c_str());
-        publish(node, depth, ir, stop, [](std::int64_t) {});
+        publish(camera, depth, ir, stop, [](std::int64_t) {});
         return 0;
     }
 }  // namespace
@@ -243,7 +264,7 @@ int main(int argc, char** argv)
         zenoh::Session tracker_side = open_session({.connect = {"127.0.0.1:" + std::to_string(port)}});
         const CalibrationRecord record = test_record();
         const std::string base = "t/k4abt";
-        Node node(camera_side, NodeOptions{.base = base, .source = "test", .depth_to_color = false}, record);
+        FakeCamera camera_node(camera_side, base, record);
         std::vector<std::uint16_t> depth, ir;
         render(record.calibration(), depth, ir);
 
@@ -278,7 +299,7 @@ int main(int argc, char** argv)
         std::set<std::int64_t> sent;
         std::atomic<bool> done{false};
         std::thread camera([&] {
-            publish(node, depth, ir, done, [&](std::int64_t stamp) {
+            publish(camera_node, depth, ir, done, [&](std::int64_t stamp) {
                 std::lock_guard lock(mutex);
                 sent.insert(stamp);
             });
