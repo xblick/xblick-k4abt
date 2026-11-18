@@ -33,7 +33,7 @@ It reads `<base>/depth`, `<base>/ir` and the calibration record on the queryable
 | CMake 3.24 or newer, Ninja, a C++20 compiler | the build |
 | Durchblick 0.5.5 or a later 0.5, C++ package | everything |
 | zenoh-c and zenoh-cpp 1.10 | everything |
-| Azure Kinect Sensor SDK 1.4 (`libk4a`) | the SDK's types and calibration functions |
+| Azure Kinect Sensor SDK 1.4 (`libk4a`) with the depth engine; the tracker never calls the depth engine, `libk4a` looks for it when it loads and otherwise logs error lines | the SDK's types and calibration functions |
 | Azure Kinect Body Tracking SDK 1.1 with its model `dnn_model_2_0_op11.onnx` | everything |
 | nlohmann_json, libjpeg or libjpeg-turbo, libpng | everything |
 | NVIDIA GPU and driver | GPU processing, the default |
@@ -70,6 +70,25 @@ under their makers' licence terms. The script prints the name of the terms and t
 download.
 [docs/build.md](docs/build.md) lists every download with its source and terms, the manual build with CMake and what
 the test checks.
+
+### Moving from xblick-azure-kinect 0.3
+
+Up to 0.3.5, `tools/setup.sh --body-tracking` of xblick-azure-kinect built the tracker. Since 0.4.0 body tracking is
+this second clone with its own `tools/setup.sh`, and its prerequisites live in `~/.cache/xblick/k4abt`. The files
+that the old script downloaded have the names that this script expects, so they need not be downloaded again. With
+the default cache directories, move the tracker's files and copy the ones that the camera still needs, then run the
+setup:
+
+```bash
+mkdir -p ~/.cache/xblick/k4abt/downloads
+mv ~/.cache/xblick/azure-kinect/downloads/{libk4abt1.1*,onnxruntime-linux-x64-gpu_*,cudnn-linux-x86_64-*,TensorRT-*} \
+   ~/.cache/xblick/k4abt/downloads/
+cp ~/.cache/xblick/azure-kinect/downloads/{libk4a1.4*,zenoh*,nlohmann-json-*} ~/.cache/xblick/k4abt/downloads/
+tools/setup.sh
+```
+
+The script checks the sha256 of every file there as for its own downloads. The unpacked directories in the old cache
+(`k4abt-1.1.2`, `onnxruntime-*`, `cudnn-*`, `TensorRT-*`, `cuda13/`) are no longer used and can be deleted.
 
 ## Run
 

@@ -2,7 +2,7 @@
 
 Azure Kinect body tracking as a Durchblick node: `xblick-k4abt` reads `<base>/depth`, `<base>/ir` and the calibration
 record `<base>/k4a_calibration` of an `xblick-azure-kinect` node (github.com/xblick/xblick-azure-kinect) and publishes
-`<base>/bodies`. C++20, plain CMake project `xblick_k4abt`, installs the CMake package `xblick_k4abt_lib` for programs
+`<base>/bodies`. C++20, plain CMake project `xblick_k4abt`, installs the CMake package `xblick_k4abt` for programs
 that embed the tracker. Human documentation: `README.md`, then `docs/` (options, performance, design, build).
 Transport-wide traps (Zenoh sessions and routers, rings, hanging tests): `AGENTS.md` of the core repository
 (github.com/xblick/xblick). Style of all documentation: the core's `docs/project/writing-docs.md`.
@@ -19,7 +19,7 @@ cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="<xblick>;<zenoh>;<k4a>/usr;<nl
   -DXBLICK_K4A_CUDNN_DIR=... -DXBLICK_K4A_TENSORRT_DIR=... -DK4ABT_TEST_MODEL=<sdk>/usr/bin/dnn_model_2_0_op11.onnx
 cmake --build build
 ctest --test-dir build --output-on-failure   # no LD_LIBRARY_PATH needed
-cmake --install build --prefix <xblick_k4abt_lib>   # the CMake package xblick_k4abt_lib (xblick_k4abt_lib_DIR)
+cmake --install build --prefix <xblick_k4abt>   # the CMake package xblick_k4abt (xblick_k4abt_DIR)
 tools/check_references.sh                         # the reference check of the CI
 ```
 
@@ -60,7 +60,6 @@ Durations: the `body_tracking` test takes about a minute with TensorRT (the engi
 | RPATH lost at install | Installed programs do not find CUDA, TensorRT, the SDKs. | `CMAKE_INSTALL_RPATH_USE_LINK_PATH` must stay on. |
 | TensorRT engine cache | First start takes about 10 s. Cache 240 MB per GPU architecture in `~/.cache/xblick/k4abt` (`xblick::cache_dir`; `--tensorrt-cache`). | Expected. The program deletes subdirectories `onnxruntime-*_tensorrt-*` of other versions at the start; the setup script's prerequisites in the same directory have other names. |
 | Depth engine errors | `libk4a` logs three errors about `libdepthengine.so.2.0` at the start. | The tracker does not use the depth engine. The errors go away with the depth engine in `libk4a1.4/` beside `libk4a` and `libGL`, `libX11` installed. |
-| Package name | A project named `xblick_k4abt` that builds on the tracker writes its own `xblick_k4abtConfig.cmake` (framework packages often do). | This package is `xblick_k4abt_lib`. |
 | NFS | Do not build or write large outputs on NFS. | Build and write large outputs on a local disk. |
 
 ## Layout

@@ -19,8 +19,9 @@ CMake options and the test.
 | cuDNN 9 for the toolkit's CUDA version | ONNX Runtime's CUDA provider |
 | TensorRT 10 for the toolkit's CUDA version | TensorRT mode |
 
-The tracker opens no device. It needs neither `k4arecord` nor the depth engine. `libk4a` still loads the depth engine
-when it starts and logs three errors when it cannot ([design.md](design.md#libraries-at-run-time)).
+The tracker opens no device and never calls the depth engine or `k4arecord`. The setup script still installs the
+depth engine with the Sensor SDK, and `libgl1` and `libx11-6` for it, only because `libk4a` looks for it when it loads
+and otherwise logs error lines at start ([design.md](design.md#libraries-at-run-time)).
 
 Microsoft ships the depth engine and the Body Tracking SDK as binary packages under its own licence terms. This
 repository contains neither.
@@ -45,7 +46,7 @@ The script downloads these files. It checks each one against its sha256 and stop
 | zenoh-c, standalone build | 1.10.1 | github.com/eclipse-zenoh/zenoh-c, release | EPL 2.0 or Apache 2.0 |
 | zenoh-cpp, source | 1.10.1 | github.com/eclipse-zenoh/zenoh-cpp, tag | EPL 2.0 or Apache 2.0 |
 | `zenohd`, the router | 1.10.1 | github.com/eclipse-zenoh/zenoh, release | EPL 2.0 or Apache 2.0 |
-| Durchblick, source | 0.5.12 | github.com/xblick/xblick, tag `v0.5.12` | Apache 2.0 |
+| Durchblick, source | 0.5.14 | github.com/xblick/xblick, tag `v0.5.14` | Apache 2.0 |
 | nlohmann_json | 3.12.0 | github.com/nlohmann/json, release | MIT |
 | `libk4a1.4`, `libk4a1.4-dev`: Sensor SDK with the depth engine | 1.4.1 | packages.microsoft.com, `ubuntu/18.04/prod` | [Microsoft Software License Terms, Azure Kinect Sensor SDK](https://www.nuget.org/packages/Microsoft.Azure.Kinect.Sensor/1.4.1/License) |
 | `libk4abt1.1`, `libk4abt1.1-dev`: Body Tracking SDK with its models (1.8 GB) | 1.1.2 | packages.microsoft.com, `ubuntu/18.04/prod` | [Microsoft Software License Terms, Azure Kinect Body Tracking SDK](https://www.nuget.org/packages/Microsoft.Azure.Kinect.BodyTracking/1.1.2/License) |
@@ -62,7 +63,8 @@ them. Microsoft's packages ask for the acceptance of the licence terms only when
 A file that is already in `downloads/` under the name that the script uses is not downloaded again. A file obtained
 in another way, for example on a PC without internet access, can therefore be put there. The script checks its
 sha256 in the same way. Files that `tools/setup.sh` of xblick-azure-kinect 0.3 downloaded for `--body-tracking` are
-in `~/.cache/xblick/azure-kinect/downloads/` and can be moved here.
+in `~/.cache/xblick/azure-kinect/downloads/`; the README (section "Moving from xblick-azure-kinect 0.3") shows how
+to move them here.
 
 What needs root, the script checks and leaves to you:
 
@@ -94,7 +96,7 @@ cmake -S . -B build -G Ninja -DCMAKE_PREFIX_PATH="<xblick>;<zenoh>;<k4a>/usr;<nl
   -DK4ABT_TEST_MODEL=<body tracking>/usr/bin/dnn_model_2_0_op11.onnx -DK4ABT_TEST_PROCESSING=cuda
 cmake --build build
 ctest --test-dir build --output-on-failure
-cmake --install build --prefix <xblick_k4abt_lib>   # the CMake package xblick_k4abt_lib, for other projects
+cmake --install build --prefix <xblick_k4abt>   # the CMake package xblick_k4abt, for other projects
 ```
 
 Here `<k4a>` and `<body tracking>` are directories into which Microsoft's packages were unpacked, or `/` after `apt`
@@ -113,8 +115,8 @@ Build in a directory on a local disk. Do not build on a shared filesystem.
 | `K4ABT_TEST_MODEL` | | The model for the `body_tracking` test: `<body tracking>/usr/bin/dnn_model_2_0_op11.onnx`. Required with the tests. |
 | `K4ABT_TEST_PROCESSING` | `cpu` | The processing mode of that test: `cpu`, `cuda` or `tensorrt`. |
 
-The installed package `xblick_k4abt_lib` has the target `xblick_k4abt_lib::xblick_k4abt` with the headers
-`body_tracking.hpp` and `session.hpp`, and the variable `xblick_k4abt_lib_ONNXRUNTIME_COMPAT`.
+The installed package `xblick_k4abt` has the target `xblick_k4abt::xblick_k4abt` with the headers
+`body_tracking.hpp` and `session.hpp`, and the variable `xblick_k4abt_ONNXRUNTIME_COMPAT`.
 
 ## Test
 

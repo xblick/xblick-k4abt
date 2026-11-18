@@ -30,14 +30,13 @@ depth camera's frame.
 ## Decisions
 
 The project is a plain CMake project with the program and the library `xblick_k4abt`. Other programs build on the
-installed CMake package `xblick_k4abt_lib`. The table lists the decisions that a simplification could undo by accident.
+installed CMake package `xblick_k4abt`. The table lists the decisions that a simplification could undo by accident.
 
 | Decision | Reason | Cost |
 | --- | --- | --- |
 | Body tracking uses a current ONNX Runtime through `src/onnxruntime_compat.cpp`, a stand-in for the SDK's `libonnxruntime.so.1.10.0`. TensorRT is the default mode. | With the SDK's ONNX Runtime 1.10, GPUs of compute capability 10 and newer (Blackwell) return no bodies. TensorRT takes 7.0 ms per frame, and CUDA takes 16.4 ms. | The host needs ONNX Runtime 1.31.1, TensorRT 10.14.1, cuDNN 9 and a CUDA 12 or 13 toolkit. The Body Tracking SDK still brings CUDA 11.2, which only the SDK's own runtime would use. |
 | The programs find libraries at run time through their RPATH. They do not use `LD_LIBRARY_PATH`. | See "Libraries at run time". | `CMakeLists.txt` contains linker options for it. |
 | The tracker reads the calibration record with its own copy of the camera's code (`src/calibration.*`), in the namespace `xblick::k4a_record`. | The tracker builds without the camera's repository. The namespace keeps the copy apart from the camera's own in a program that links both libraries. | The record's format is defined twice. A change of the record in xblick-azure-kinect needs the same change here, and both raise `kCalibrationRecordVersion`. |
-| The CMake package is `xblick_k4abt_lib`, not `xblick_k4abt`. | A project that wraps the tracker for a framework is naturally named `xblick_k4abt`, and such frameworks often export a CMake package under the project's name. The two names must differ. | The package name and the repository name differ. |
 | Monitoring uses `<base>/diagnostics` with ROS's message. | Rerun and `xblick diagnostics` read the diagnostics. | A monitor of another framework has to read the topic or receive the report from the program that embeds the tracker. |
 | The calibration record has version 2, with the camera node's calibration files. | With K and D of the files in the SDK's calibration, the tracker uses the intrinsics of the camera's streams. | Camera nodes and trackers of another record version refuse each other. |
 

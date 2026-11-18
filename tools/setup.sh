@@ -53,7 +53,7 @@ repo=$(cd "$(dirname "$0")/.." && pwd)
 # ------------------------------------------------------------------------------------------------- pinned versions
 
 zenoh_version=1.10.1
-xblick_version=0.5.12
+xblick_version=0.5.14
 json_version=3.12.0
 k4a_version=1.4.1
 k4abt_version=1.1.2
@@ -67,7 +67,7 @@ pins=(
     "zenoh-c-$zenoh_version-x86_64-unknown-linux-gnu-standalone.zip|https://github.com/eclipse-zenoh/zenoh-c/releases/download/$zenoh_version/zenoh-c-$zenoh_version-x86_64-unknown-linux-gnu-standalone.zip|9ee0f2d732b0f3042a7e1cd3076042a2bc3ac0415587c40bc3ed7b8b62fbde11"
     "zenoh-cpp-$zenoh_version.tar.gz|https://github.com/eclipse-zenoh/zenoh-cpp/archive/refs/tags/$zenoh_version.tar.gz|64d3c315c4fdfa54b4d96ee27ee2b3d98320b0fb289402fff9d7a99bc513528e"
     "zenoh-$zenoh_version-x86_64-unknown-linux-gnu-standalone.zip|https://github.com/eclipse-zenoh/zenoh/releases/download/$zenoh_version/zenoh-$zenoh_version-x86_64-unknown-linux-gnu-standalone.zip|512ac81438fd995ca2db02f75dd83afa048b6a11630ee10e0cb4dc423c39a5e9"
-    "xblick-$xblick_version.tar.gz|https://github.com/xblick/xblick/archive/refs/tags/v$xblick_version.tar.gz|d54a3c5e7e069f9edd7611929a7a1c3ec6acd7d4d4c74185e5969ef5fc949736"
+    "xblick-$xblick_version.tar.gz|https://github.com/xblick/xblick/archive/refs/tags/v$xblick_version.tar.gz|176652b48c71501fb1bd1e965b4d0dbf3b7331545f46b8cfb6d46311e447c186"
     "nlohmann-json-$json_version.tar.xz|https://github.com/nlohmann/json/releases/download/v$json_version/json.tar.xz|42f6e95cad6ec532fd372391373363b62a14af6d771056dbfc86160e6dfff7aa"
     "libk4a1.4_${k4a_version}_amd64.deb|https://packages.microsoft.com/ubuntu/18.04/prod/pool/main/libk/libk4a1.4/libk4a1.4_${k4a_version}_amd64.deb|c1c63f81641eed1326136a44e5a5fd229e1e6315b2b20b2dddb5523a556c9329"
     "libk4a1.4-dev_${k4a_version}_amd64.deb|https://packages.microsoft.com/ubuntu/18.04/prod/pool/main/libk/libk4a1.4-dev/libk4a1.4-dev_${k4a_version}_amd64.deb|08303094b9ad36ea74c19bc8b8950c97055e73dd2e8bd18e2af5e165a2289cd2"
@@ -229,7 +229,8 @@ fi
 # ------------------------------------------------------------------------------------------------- the SDKs
 
 # Microsoft's packages unpacked as they are (usr/...): libk4a finds the depth engine in usr/lib/x86_64-linux-gnu/
-# libk4a1.4 through its own RUNPATH ($ORIGIN/libk4a1.4).
+# libk4a1.4 through its own RUNPATH ($ORIGIN/libk4a1.4). The tracker never calls the depth engine; it is installed
+# only because libk4a looks for it when it loads and otherwise logs error lines at start.
 k4a=$cache/k4a-$k4a_version
 if ! finished "$k4a"; then
     fetch "libk4a1.4_${k4a_version}_amd64.deb" "$notice_k4a"

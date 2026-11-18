@@ -1,0 +1,13 @@
+# xblick_k4abt: the library of xblick-k4abt (CMakeLists.txt). Target xblick_k4abt::xblick_k4abt (the
+# tracker, with its headers body_tracking.hpp and session.hpp). Variable xblick_k4abt_ONNXRUNTIME_COMPAT: built
+# with a current ONNX Runtime behind the stand-in (XBLICK_K4A_ONNXRUNTIME_DIR).
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+set(xblick_k4abt_ONNXRUNTIME_COMPAT @XBLICK_K4ABT_COMPAT@)
+find_dependency(xblick 0.5.5)
+find_dependency(k4a 1.4)
+find_dependency(k4abt 1.1)
+find_dependency(nlohmann_json 3)
+include("${CMAKE_CURRENT_LIST_DIR}/xblick_k4abtTargets.cmake")
+check_required_components(xblick_k4abt)

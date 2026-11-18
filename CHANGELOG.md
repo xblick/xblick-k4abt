@@ -14,7 +14,7 @@ before 0.3.0 are described in the git history only.*
   | What | xblick-azure-kinect 0.3.5 | xblick-k4abt 0.4.0 |
   | --- | --- | --- |
   | Repository | `github.com/xblick/xblick-azure-kinect`, `-DXBLICK_K4A_BODY_TRACKING=ON` | `github.com/xblick/xblick-k4abt`, always built; the option `XBLICK_K4A_BODY_TRACKING` is gone |
-  | CMake package and target | `xblick_k4a` 0.3 (with `xblick_k4a_BODY_TRACKING`), `xblick_k4a::xblick_k4abt` | `xblick_k4abt_lib` 0.4, `xblick_k4abt_lib::xblick_k4abt` |
+  | CMake package and target | `xblick_k4a` 0.3 (with `xblick_k4a_BODY_TRACKING`), `xblick_k4a::xblick_k4abt` | `xblick_k4abt` 0.4, `xblick_k4abt::xblick_k4abt` |
   | Installed headers | `include/xblick_k4a` | `include/xblick_k4abt`: `body_tracking.hpp`, `session.hpp` |
   | CUDA toolkit | through the camera's CUDA parts (`XBLICK_K4A_CUDA`) | `CUDAToolkit_ROOT`, needed with `XBLICK_K4A_ONNXRUNTIME_DIR` |
   | Setup | `tools/setup.sh --body-tracking [--untested-cuda13]` | `tools/setup.sh [--cuda-toolkit DIR]` |
@@ -27,6 +27,11 @@ before 0.3.0 are described in the git history only.*
   needs the Ubuntu packages `libegl-dev` and `libgl-dev`; `libgl1` and `libx11-6` stay, for the depth engine that
   `libk4a` loads at its start. The other CMake options (`XBLICK_K4A_ONNXRUNTIME_DIR`, `XBLICK_K4A_CUDNN_DIR`,
   `XBLICK_K4A_TENSORRT_DIR`, `K4ABT_TEST_MODEL`, `K4ABT_TEST_PROCESSING`) keep their names.
+
+  Migration: body tracking is now a second clone with its own `tools/setup.sh`, and its prerequisites live in
+  `~/.cache/xblick/k4abt`. The files that `--body-tracking` downloaded to `~/.cache/xblick/azure-kinect/downloads`
+  have the names this script expects: moved or copied to `~/.cache/xblick/k4abt/downloads`, they are not downloaded
+  again. The README (section "Moving from xblick-azure-kinect 0.3") has the commands.
 
 * **0.3.5** `tools/setup.sh --body-tracking --untested-cuda13` on a CUDA 13 toolkit takes the builds of ONNX Runtime
   1.31.1, cuDNN 9.15.0.58 and TensorRT 10.14.1.48 for CUDA 13, pinned with sha256. Without the option,

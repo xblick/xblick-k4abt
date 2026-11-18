@@ -7,7 +7,7 @@
 #         -DK4ABT_TEST_MODEL=<Body Tracking SDK>/usr/bin/dnn_model_2_0_op11.onnx
 #
 # Targets: xblick-k4abt (the tracker), test_k4a_body_tracking (no camera needed; ctest). Installs the library as
-# the CMake package xblick_k4abt_lib (xblick_k4abt_lib::xblick_k4abt), for programs that embed the tracker.
+# the CMake package xblick_k4abt (xblick_k4abt::xblick_k4abt), for programs that embed the tracker.
 cmake_minimum_required(VERSION 3.22)
 project(xblick_k4abt VERSION 0.4.0 LANGUAGES CXX)
 
@@ -108,28 +108,27 @@ if(BUILD_TESTING)
   add_test(NAME body_tracking COMMAND test_k4a_body_tracking ${K4ABT_TEST_MODEL} ${K4ABT_TEST_PROCESSING})
 endif()
 
-# The CMake package xblick_k4abt_lib: the tracker's library with its header and the session helpers
-# (body_tracking.hpp, session.hpp). Named apart from projects named xblick_k4abt that build on it and export a
-# package of their own name.
+# The CMake package xblick_k4abt: the tracker's library with its header and the session helpers
+# (body_tracking.hpp, session.hpp).
 set(XBLICK_K4ABT_EXPORTED xblick_k4abt)
 if(XBLICK_K4A_ONNXRUNTIME_DIR)
   list(APPEND XBLICK_K4ABT_EXPORTED onnxruntime_compat)
 endif()
-install(TARGETS ${XBLICK_K4ABT_EXPORTED} EXPORT xblick_k4abt_libTargets
+install(TARGETS ${XBLICK_K4ABT_EXPORTED} EXPORT xblick_k4abtTargets
         ARCHIVE DESTINATION lib LIBRARY DESTINATION lib RUNTIME DESTINATION bin)
 install(FILES src/body_tracking.hpp src/session.hpp DESTINATION include/xblick_k4abt)
-install(EXPORT xblick_k4abt_libTargets NAMESPACE xblick_k4abt_lib:: DESTINATION lib/cmake/xblick_k4abt_lib)
+install(EXPORT xblick_k4abtTargets NAMESPACE xblick_k4abt:: DESTINATION lib/cmake/xblick_k4abt)
 if(XBLICK_K4A_ONNXRUNTIME_DIR)
   set(XBLICK_K4ABT_COMPAT ON)
 else()
   set(XBLICK_K4ABT_COMPAT OFF)
 endif()
 include(CMakePackageConfigHelpers)
-configure_package_config_file(cmake/xblick_k4abt_libConfig.cmake.in
-                              ${CMAKE_CURRENT_BINARY_DIR}/xblick_k4abt_libConfig.cmake
-                              INSTALL_DESTINATION lib/cmake/xblick_k4abt_lib)
-write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/xblick_k4abt_libConfigVersion.cmake
+configure_package_config_file(cmake/xblick_k4abtConfig.cmake.in
+                              ${CMAKE_CURRENT_BINARY_DIR}/xblick_k4abtConfig.cmake
+                              INSTALL_DESTINATION lib/cmake/xblick_k4abt)
+write_basic_package_version_file(${CMAKE_CURRENT_BINARY_DIR}/xblick_k4abtConfigVersion.cmake
                                  COMPATIBILITY SameMinorVersion)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/xblick_k4abt_libConfig.cmake
-              ${CMAKE_CURRENT_BINARY_DIR}/xblick_k4abt_libConfigVersion.cmake
-        DESTINATION lib/cmake/xblick_k4abt_lib)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/xblick_k4abtConfig.cmake
+              ${CMAKE_CURRENT_BINARY_DIR}/xblick_k4abtConfigVersion.cmake
+        DESTINATION lib/cmake/xblick_k4abt)
